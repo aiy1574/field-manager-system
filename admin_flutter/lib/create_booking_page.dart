@@ -306,13 +306,31 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
 
             TextField(
               controller: dateController,
+              readOnly: true,
               decoration: const InputDecoration(
-                labelText: "Booking Date yyyy-mm-dd",
+              labelText: "Booking Date",
+              suffixIcon: Icon(Icons.calendar_month),
               ),
-              onSubmitted: (_) {
+              onTap: () async {
+                final pickedDate = await showDatePicker(
+                  context: context,
+                  initialDate: DateTime.now(),
+                  firstDate: DateTime(2024),
+                  lastDate: DateTime(2030),
+                );
+
+                if (pickedDate != null) {
+                  final formatted =
+                      "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+
+                  setState(() {
+                    dateController.text = formatted;
+                  });
+
                 refreshBookingsAfterChange();
-              },
-            ),
+              }
+            },
+          ),
 
             const SizedBox(height: 15),
 

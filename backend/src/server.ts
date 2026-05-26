@@ -6,6 +6,8 @@ import crudRoutes from './routes/crud.routes.js';
 import bookingRoutes from './routes/booking.routes.js';
 import saleRoutes from './routes/sale.routes.js';
 import reportRoutes from './routes/report.routes.js';
+import dashboardRoutes from './routes/dashboard.routes.js';
+import productRoutes from './routes/product.routes.js';
 
 const app = express();
 app.use(cors());
@@ -16,6 +18,8 @@ app.use('/api/bookings', bookingRoutes);
 app.use('/api/sales', saleRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api', crudRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/products', productRoutes);
 app.use((err: any, _req: any, res: any, _next: any) => {
   console.error(err);
   res.status(500).json({ message: 'Server error', detail: err.message });
