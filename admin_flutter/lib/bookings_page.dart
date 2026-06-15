@@ -20,8 +20,11 @@ class _BookingsPageState extends State<BookingsPage> {
 
   String filter = 'active';
 
+<<<<<<< HEAD
   final dateController = TextEditingController();
 
+=======
+>>>>>>> 6a2acde199626aec73368ff41309d7b67f8513a5
   Future<void> fetchBookings() async {
     final response = await http.get(
       Uri.parse(
@@ -170,6 +173,7 @@ class _BookingsPageState extends State<BookingsPage> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
+<<<<<<< HEAD
             TextField(
               controller: dateController,
               readOnly: true,
@@ -215,6 +219,27 @@ class _BookingsPageState extends State<BookingsPage> {
 
             const SizedBox(height: 20),
 
+=======
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  filterButton("All", "all"),
+                  const SizedBox(width: 10),
+                  filterButton("Active", "active"),
+                  const SizedBox(width: 10),
+                  filterButton("Paid", "paid"),
+                  const SizedBox(width: 10),
+                  filterButton("Unpaid", "unpaid"),
+                  const SizedBox(width: 10),
+                  filterButton("Cancelled", "cancelled"),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+>>>>>>> 6a2acde199626aec73368ff41309d7b67f8513a5
             Expanded(
               child: ListView.builder(
                 itemCount: filteredBookings.length,
