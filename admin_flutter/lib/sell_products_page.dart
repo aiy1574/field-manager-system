@@ -53,11 +53,29 @@ class _SellProductsPageState extends State<SellProductsPage> {
     });
   }
 
+  void decreaseQty(int index) {
+    setState(() {
+      if (cart[index]['qty'] > 1) {
+        cart[index]['qty'] -= 1;
+      } else {
+        cart.removeAt(index);
+      }
+    });
+  }
+
+  void removeFromCart(int index) {
+    setState(() {
+      cart.removeAt(index);
+    });
+  }
+
   double get total {
     double sum = 0;
+
     for (final item in cart) {
       sum += item['price'] * item['qty'];
     }
+
     return sum;
   }
 
@@ -82,7 +100,7 @@ class _SellProductsPageState extends State<SellProductsPage> {
         cart.clear();
       });
 
-      fetchProducts();
+      await fetchProducts();
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -150,7 +168,7 @@ class _SellProductsPageState extends State<SellProductsPage> {
           ),
 
           Container(
-            width: 350,
+            width: 400,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               border: Border(
@@ -178,13 +196,37 @@ class _SellProductsPageState extends State<SellProductsPage> {
                     itemBuilder: (context, index) {
                       final item = cart[index];
 
-                      return ListTile(
-                        title: Text(item['name']),
-                        subtitle: Text(
-                          '${item['qty']} x ${item['price']} Kip',
-                        ),
-                        trailing: Text(
-                          '${item['qty'] * item['price']}',
+                      return Card(
+                        child: ListTile(
+                          title: Text(item['name']),
+                          subtitle: Text(
+                            '${item['qty']} x ${item['price']} Kip',
+                          ),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: const Icon(Icons.remove_circle),
+                                onPressed: () {
+                                  decreaseQty(index);
+                                },
+                              ),
+
+                              Text(
+                                '${item['qty'] * item['price']}',
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+
+                              IconButton(
+                                icon: const Icon(Icons.delete),
+                                onPressed: () {
+                                  removeFromCart(index);
+                                },
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },
