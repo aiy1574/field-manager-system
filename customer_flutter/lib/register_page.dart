@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class RegisterPage extends StatelessWidget {
   RegisterPage({super.key});
@@ -8,13 +11,48 @@ class RegisterPage extends StatelessWidget {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
 
+  Future<void> register(BuildContext context) async {
+    final response = await http.post(
+      Uri.parse(
+        'http://localhost:4000/api/customers/register',
+      ),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'full_name': fullNameController.text,
+        'phone': phoneController.text,
+        'email': emailController.text,
+        'password': passwordController.text,
+      }),
+    );
+
+    if (response.statusCode == 201) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Register Success',
+          ),
+        ),
+      );
+
+      Navigator.pop(context);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(response.body),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Register"),
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
@@ -29,6 +67,7 @@ class RegisterPage extends StatelessWidget {
 
             TextField(
               controller: phoneController,
+              keyboardType: TextInputType.phone,
               decoration: const InputDecoration(
                 labelText: "Phone",
               ),
@@ -55,9 +94,17 @@ class RegisterPage extends StatelessWidget {
 
             const SizedBox(height: 30),
 
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text("Register"),
+            SizedBox(
+              width: double.infinity,
+              height: 50,
+              child: ElevatedButton(
+                onPressed: () {
+                  register(context);
+                },
+                child: const Text(
+                  "Register",
+                ),
+              ),
             ),
           ],
         ),
