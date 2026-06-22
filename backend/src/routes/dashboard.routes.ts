@@ -8,47 +8,47 @@ const router = Router();
 router.get(
   '/',
   auth,
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (_req, res) => {
     const [[todayBookings]]: any = await pool.query(`
       SELECT COUNT(*) total
       FROM bookings
-      WHERE DATE(booking_date) = (
-        SELECT MAX(DATE(booking_date)) FROM bookings
-      )
+      WHERE booking_date = CURDATE()
       AND status != 'cancelled'
     `);
 
     const [[todayRevenue]]: any = await pool.query(`
       SELECT COALESCE(SUM(total_price), 0) total
       FROM bookings
-      WHERE DATE(booking_date) = (
-        SELECT MAX(DATE(booking_date)) FROM bookings
-      )
-      AND paid = 1
+      WHERE booking_date = CURDATE()
+      AND payment_status = 'paid'
       AND status != 'cancelled'
     `);
 
-    const [[unpaidBookings]]: any = await pool.query(`
+    const [[pendingPayments]]: any = await pool.query(`
       SELECT COUNT(*) total
       FROM bookings
-      WHERE paid = 0
+      WHERE payment_status = 'pending'
       AND status != 'cancelled'
     `);
 
     const [[checkedIn]]: any = await pool.query(`
       SELECT COUNT(*) total
       FROM bookings
-      WHERE DATE(booking_date) = (
-        SELECT MAX(DATE(booking_date)) FROM bookings
-      )
+      WHERE booking_date = CURDATE()
       AND status = 'checked_in'
+    `);
+
+    const [[totalCustomers]]: any = await pool.query(`
+      SELECT COUNT(*) total
+      FROM customers
     `);
 
     res.json({
       today_bookings: todayBookings.total,
       today_revenue: todayRevenue.total,
-      unpaid_bookings: unpaidBookings.total,
+      pending_payments: pendingPayments.total,
       checked_in: checkedIn.total,
+      total_customers: totalCustomers.total,
     });
   })
 );

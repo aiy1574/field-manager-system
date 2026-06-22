@@ -1,13 +1,10 @@
-<<<<<<< Updated upstream
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'register_page.dart';
-=======
-import 'package:flutter/material.dart';
->>>>>>> Stashed changes
+import 'dashboard_page.dart';
 
 void main() {
   runApp(const CustomerApp());
@@ -21,20 +18,15 @@ class CustomerApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'Football Booking',
-<<<<<<< Updated upstream
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.green,
       ),
       home: LoginPage(),
-=======
-      home: const CustomerHomePage(),
->>>>>>> Stashed changes
     );
   }
 }
 
-<<<<<<< Updated upstream
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
 
@@ -63,7 +55,7 @@ class LoginPage extends StatelessWidget {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => CustomerDashboardPage(
+          builder: (context) => DashboardPage(
             token: token,
             customer: customer,
           ),
@@ -209,70 +201,6 @@ class LoginPage extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class CustomerDashboardPage extends StatelessWidget {
-  final String token;
-  final Map customer;
-
-  const CustomerDashboardPage({
-    super.key,
-    required this.token,
-    required this.customer,
-  });
-=======
-class CustomerHomePage extends StatelessWidget {
-  const CustomerHomePage({super.key});
->>>>>>> Stashed changes
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-<<<<<<< Updated upstream
-        title: const Text("Customer Dashboard"),
-      ),
-      body: Center(
-        child: Text(
-          "Welcome ${customer['full_name'] ?? ''}",
-          style: const TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-          ),
-=======
-        title: const Text("Football Booking"),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              "Customer App",
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-
-            const SizedBox(height: 30),
-
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text("Login"),
-            ),
-
-            const SizedBox(height: 20),
-
-            ElevatedButton(
-              onPressed: () {},
-              child: const Text("Register"),
-            ),
-          ],
->>>>>>> Stashed changes
         ),
       ),
     );

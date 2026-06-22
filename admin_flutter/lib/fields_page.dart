@@ -28,8 +28,6 @@ class _FieldsPageState extends State<FieldsPage> {
       },
     );
 
-    print(response.body);
-
     if (response.statusCode == 200) {
       setState(() {
         fields = jsonDecode(response.body);
@@ -38,6 +36,8 @@ class _FieldsPageState extends State<FieldsPage> {
   }
 
   Future<void> createField() async {
+    if (nameController.text.trim().isEmpty) return;
+
     await http.post(
       Uri.parse('http://localhost:4000/api/fields'),
       headers: {
@@ -45,7 +45,7 @@ class _FieldsPageState extends State<FieldsPage> {
         'Authorization': 'Bearer ${widget.token}',
       },
       body: jsonEncode({
-        'name': nameController.text,
+        'name': nameController.text.trim(),
       }),
     );
 
@@ -93,6 +93,7 @@ class _FieldsPageState extends State<FieldsPage> {
             controller: editController,
             decoration: const InputDecoration(
               labelText: "Field Name",
+              border: OutlineInputBorder(),
             ),
           ),
           actions: [
@@ -118,6 +119,112 @@ class _FieldsPageState extends State<FieldsPage> {
     );
   }
 
+  Widget fieldStatusBadge(Map field) {
+    final isActive = field['is_active'] == 1 ||
+        field['is_active'] == true ||
+        field['status'] == 'active' ||
+        field['status'] == null;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: isActive ? Colors.green.shade50 : Colors.red.shade50,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        isActive ? "Active" : "Inactive",
+        style: TextStyle(
+          color: isActive ? Colors.green : Colors.red,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
+  }
+
+  Widget fieldCard(Map field) {
+    final price = field['price_per_hour'] ?? 100000;
+
+    return Card(
+      elevation: 3,
+      child: Padding(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  backgroundColor: Colors.green.shade50,
+                  child: Icon(
+                    Icons.stadium,
+                    color: Colors.green.shade700,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    field['name'] ?? '',
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 14),
+
+            Text(
+              field['description'] ?? 'No description',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+
+            const SizedBox(height: 12),
+
+            Text(
+              "ລາຄາ: $price Kip/ຊົ່ວໂມງ",
+              style: const TextStyle(
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+
+            const SizedBox(height: 10),
+
+            fieldStatusBadge(field),
+
+            const Spacer(),
+
+            Row(
+              children: [
+                OutlinedButton.icon(
+                  onPressed: () {
+                    showEditDialog(field);
+                  },
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text("Edit"),
+                ),
+                const SizedBox(width: 10),
+                OutlinedButton.icon(
+                  onPressed: () {
+                    deleteField(field['id']);
+                  },
+                  icon: const Icon(Icons.delete, size: 18),
+                  label: const Text("Delete"),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   void initState() {
     super.initState();
@@ -126,68 +233,81 @@ class _FieldsPageState extends State<FieldsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Football Fields"),
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: nameController,
-                    decoration: const InputDecoration(
-                      labelText: "Field Name",
+    return Padding(
+      padding: const EdgeInsets.all(28),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                "Field Management",
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const Spacer(),
+              IconButton(
+                onPressed: fetchFields,
+                icon: const Icon(Icons.refresh),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 24),
+
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: "Field Name",
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
-                ),
-                const SizedBox(width: 10),
-                ElevatedButton(
-                  onPressed: createField,
-                  child: const Text("Add"),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Expanded(
-              child: ListView.builder(
-                itemCount: fields.length,
-                itemBuilder: (context, index) {
-                  final field = fields[index];
-
-                  return Card(
-                    child: ListTile(
-                      title: Text(field['name']),
-                      subtitle: Text(
-                        field['description'] ?? '',
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () {
-                              showEditDialog(field);
-                            },
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              deleteField(field['id']);
-                            },
-                          ),
-                        ],
-                      ),
+                  const SizedBox(width: 12),
+                  SizedBox(
+                    height: 55,
+                    child: ElevatedButton.icon(
+                      onPressed: createField,
+                      icon: const Icon(Icons.add),
+                      label: const Text("Add Field"),
                     ),
-                  );
-                },
+                  ),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+
+          const SizedBox(height: 20),
+
+          Expanded(
+            child: fields.isEmpty
+                ? const Center(
+                    child: Text("No fields found"),
+                  )
+                : GridView.builder(
+                    itemCount: fields.length,
+                    gridDelegate:
+                        const SliverGridDelegateWithMaxCrossAxisExtent(
+                      maxCrossAxisExtent: 420,
+                      mainAxisExtent: 230,
+                      crossAxisSpacing: 18,
+                      mainAxisSpacing: 18,
+                    ),
+                    itemBuilder: (context, index) {
+                      final field = fields[index];
+                      return fieldCard(field);
+                    },
+                  ),
+          ),
+        ],
       ),
     );
   }
