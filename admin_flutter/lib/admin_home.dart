@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
 import 'bookings_page.dart';
-import 'create_booking_page.dart';
 import 'customers_page.dart';
 import 'fields_page.dart';
 import 'products_page.dart';
@@ -158,10 +157,27 @@ class _AdminHomePageState extends State<AdminHomePage> {
             spacing: 20,
             runSpacing: 20,
             children: [
-              summaryCard('Today Bookings', todayBookings, Icons.calendar_month),
-              summaryCard('Revenue', todayRevenue, Icons.payments, unit: 'Kip'),
-              summaryCard('Pending Payments', pendingPayments, Icons.hourglass_top),
-              summaryCard('Checked-in', checkedIn, Icons.login),
+              summaryCard(
+                'Today Bookings',
+                todayBookings,
+                Icons.calendar_month,
+              ),
+              summaryCard(
+                'Revenue',
+                todayRevenue,
+                Icons.payments,
+                unit: 'Kip',
+              ),
+              summaryCard(
+                'Pending Payments',
+                pendingPayments,
+                Icons.hourglass_top,
+              ),
+              summaryCard(
+                'Checked-in',
+                checkedIn,
+                Icons.login,
+              ),
             ],
           ),
         ],
@@ -217,7 +233,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
                 const SizedBox(height: 30),
-
                 sidebarItem('Dashboard', Icons.dashboard, 0),
                 sidebarItem('Field Management', Icons.stadium, 1),
                 sidebarItem('Customers', Icons.people, 2),
@@ -225,9 +240,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 sidebarItem('Products', Icons.shopping_cart, 4),
                 sidebarItem('POS System', Icons.point_of_sale, 5),
                 sidebarItem('Reports', Icons.bar_chart, 6),
-
                 const Spacer(),
-
                 Padding(
                   padding: const EdgeInsets.all(14),
                   child: ListTile(
@@ -241,7 +254,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
               ],
             ),
           ),
-
           Expanded(
             child: Container(
               color: const Color(0xFFF8FCF5),
