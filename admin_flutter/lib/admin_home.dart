@@ -3,12 +3,17 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'theme.dart';
 import 'bookings_page.dart';
 import 'customers_page.dart';
 import 'fields_page.dart';
 import 'products_page.dart';
 import 'reports_page.dart';
 import 'sell_products_page.dart';
+
+const Color primaryGreen = Color(0xFF16A34A);
+const Color darkGreen = Color(0xFF059669);
+const Color lightBg = Color(0xFFF4F8F1);
 
 class AdminHomePage extends StatefulWidget {
   final String token;
@@ -51,21 +56,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
     final selected = selectedIndex == index;
 
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
       child: ListTile(
         selected: selected,
         selectedTileColor: Colors.green.shade50,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(14),
         ),
         leading: Icon(
           icon,
-          color: selected ? Colors.green : Colors.black54,
+          color: selected ? primaryGreen : Colors.black54,
         ),
         title: Text(
           title,
           style: TextStyle(
-            color: selected ? Colors.green : Colors.black87,
+            color: selected ? primaryGreen : Colors.black87,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
@@ -78,9 +83,18 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  Widget summaryCard(String title, String value, IconData icon, {String? unit}) {
+  Widget summaryCard(
+    String title,
+    String value,
+    IconData icon, {
+    String? unit,
+  }) {
     return Card(
       elevation: 3,
+      shadowColor: Colors.black12,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(22),
+      ),
       child: SizedBox(
         width: 260,
         height: 140,
@@ -91,7 +105,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: Colors.green.shade100,
-                child: Icon(icon, color: Colors.green.shade800),
+                child: Icon(
+                  icon,
+                  color: darkGreen,
+                  size: 28,
+                ),
               ),
               const SizedBox(width: 18),
               Expanded(
@@ -99,7 +117,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title),
+                    Text(
+                      title,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
                     const SizedBox(height: 8),
                     FittedBox(
                       fit: BoxFit.scaleDown,
@@ -139,16 +163,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
           Row(
             children: [
               const Text(
-                'Dashboard',
+                'ໜ້າຫຼັກ',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.bold,
                 ),
               ),
               const Spacer(),
-              IconButton(
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: primaryGreen,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                ),
                 onPressed: fetchDashboard,
                 icon: const Icon(Icons.refresh),
+                label: const Text('ໂຫຼດຄືນ'),
               ),
             ],
           ),
@@ -158,27 +191,59 @@ class _AdminHomePageState extends State<AdminHomePage> {
             runSpacing: 20,
             children: [
               summaryCard(
-                'Today Bookings',
+                'ການຈອງມື້ນີ້',
                 todayBookings,
                 Icons.calendar_month,
               ),
               summaryCard(
-                'Revenue',
+                'ລາຍຮັບ',
                 todayRevenue,
                 Icons.payments,
-                unit: 'Kip',
+                unit: 'ກີບ',
               ),
               summaryCard(
-                'Pending Payments',
+                'ລໍຖ້າກວດສອບ',
                 pendingPayments,
                 Icons.hourglass_top,
               ),
               summaryCard(
-                'Checked-in',
+                'ເຂົ້າໃຊ້ແລ້ວ',
                 checkedIn,
                 Icons.login,
               ),
             ],
+          ),
+          const SizedBox(height: 28),
+          Card(
+            elevation: 2,
+            shadowColor: Colors.black12,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: Row(
+                children: [
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: Colors.green.shade50,
+                    child: const Icon(
+                      Icons.info_outline,
+                      color: primaryGreen,
+                    ),
+                  ),
+                  const SizedBox(width: 18),
+                  const Expanded(
+                    child: Text(
+                      'ພາບລວມຂອງລະບົບຈອງສະໜາມ ST: ຕິດຕາມການຈອງ, ການຊຳລະ, ລາຍຮັບ ແລະ ການເຂົ້າໃຊ້ສະໜາມ.',
+                      style: TextStyle(
+                        height: 1.5,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
         ],
       ),
@@ -200,52 +265,94 @@ class _AdminHomePageState extends State<AdminHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: lightBg,
       body: Row(
         children: [
           Container(
-            width: 260,
+            width: 270,
             decoration: BoxDecoration(
               color: Colors.white,
               border: Border(
                 right: BorderSide(color: Colors.grey.shade200),
               ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.03),
+                  blurRadius: 18,
+                  offset: const Offset(4, 0),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 const SizedBox(height: 28),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 18),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.sports_soccer, color: Colors.green),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          'ເຂົ້າສູ່ລະບົບເດີ່ນບານ ST',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.green.shade800,
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          primaryGreen,
+                          darkGreen,
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(22),
+                    ),
+                    child: Row(
+                      children: const [
+                        Icon(
+                          Icons.sports_soccer,
+                          color: Colors.white,
+                          size: 34,
+                        ),
+                        SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'ST Football\nAdmin',
+                            style: TextStyle(
+                              fontSize: 18,
+                              height: 1.2,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
-                const SizedBox(height: 30),
-                sidebarItem('Dashboard', Icons.dashboard, 0),
-                sidebarItem('Field Management', Icons.stadium, 1),
-                sidebarItem('Customers', Icons.people, 2),
-                sidebarItem('Bookings', Icons.calendar_month, 3),
-                sidebarItem('Products', Icons.shopping_cart, 4),
-                sidebarItem('POS System', Icons.point_of_sale, 5),
-                sidebarItem('Reports', Icons.bar_chart, 6),
+                const SizedBox(height: 24),
+
+                sidebarItem('ໜ້າຫຼັກ', Icons.dashboard, 0),
+                sidebarItem('ຈັດການສະໜາມ', Icons.stadium, 1),
+                sidebarItem('ລູກຄ້າ', Icons.people, 2),
+                sidebarItem('ຈັດການການຈອງ', Icons.calendar_month, 3),
+                sidebarItem('ສິນຄ້າ', Icons.shopping_cart, 4),
+                sidebarItem('ຂາຍສິນຄ້າ', Icons.point_of_sale, 5),
+                sidebarItem('ລາຍງານ', Icons.bar_chart, 6),
+
                 const Spacer(),
+
                 Padding(
                   padding: const EdgeInsets.all(14),
                   child: ListTile(
-                    leading: const Icon(Icons.logout),
-                    title: const Text('Logout'),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    leading: const Icon(
+                      Icons.logout,
+                      color: Colors.red,
+                    ),
+                    title: const Text(
+                      'ອອກຈາກລະບົບ',
+                      style: TextStyle(
+                        color: Colors.red,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                     onTap: () {
                       Navigator.pop(context);
                     },
@@ -256,7 +363,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           ),
           Expanded(
             child: Container(
-              color: const Color(0xFFF8FCF5),
+              color: lightBg,
               child: currentPage(),
             ),
           ),

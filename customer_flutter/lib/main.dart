@@ -249,10 +249,29 @@ class _LoginPageState extends State<LoginPage> {
               Align(
                 alignment: Alignment.centerRight,
                 child: TextButton(
-                  onPressed: () {},
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (_) => AlertDialog(
+                        title: const Text('ລືມລະຫັດຜ່ານ'),
+                        content: const Text(
+                          'ກະລຸນາຕິດຕໍ່ Admin ເພື່ອຂໍປ່ຽນລະຫັດຜ່ານ.ຕິດຕໍ່ເບີໂທ: 020-xxxxxxx',
+                        ),
+                        actions: [
+                          ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                            },
+                            child: const Text('ຕົກລົງ'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                   child: const Text('ລືມລະຫັດຜ່ານ?'),
                 ),
               ),
+              const SizedBox(height: 16),
               const SizedBox(height: 16),
               SizedBox(
                 height: 58,

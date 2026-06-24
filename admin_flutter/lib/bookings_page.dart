@@ -1,8 +1,12 @@
 import 'dart:convert';
 
+import 'theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
+
+const Color primaryGreen = Color(0xFF16A34A);
+const Color lightBg = Color(0xFFF4F8F1);
 
 class BookingsPage extends StatefulWidget {
   final String token;
@@ -147,9 +151,45 @@ class _BookingsPageState extends State<BookingsPage> {
     return text;
   }
 
+  String formatTime(dynamic value) {
+    if (value == null) return '-';
+    final text = value.toString();
+    if (text.length >= 5) return text.substring(0, 5);
+    return text;
+  }
+
+  String laoStatus(String status) {
+    switch (status) {
+      case 'booked':
+        return 'ຈອງແລ້ວ';
+      case 'checked_in':
+        return 'ເຂົ້າໃຊ້ແລ້ວ';
+      case 'cancelled':
+        return 'ຍົກເລີກແລ້ວ';
+      case 'cancel_requested':
+        return 'ຂໍຍົກເລີກ';
+      default:
+        return status.isEmpty ? '-' : status;
+    }
+  }
+
+  String laoPayment(String status) {
+    switch (status) {
+      case 'pending':
+        return 'ລໍຖ້າກວດສອບ';
+      case 'paid':
+        return 'ຊຳລະແລ້ວ';
+      case 'rejected':
+        return 'ປະຕິເສດ';
+      default:
+        return status.isEmpty ? '-' : status;
+    }
+  }
+
   Color statusColor(String? status) {
     if (status == 'checked_in') return Colors.green;
     if (status == 'cancelled') return Colors.red;
+    if (status == 'cancel_requested') return Colors.deepOrange;
     return Colors.orange;
   }
 
@@ -190,6 +230,7 @@ class _BookingsPageState extends State<BookingsPage> {
             selected ? "✓ $label" : label,
             overflow: TextOverflow.ellipsis,
           ),
+          selectedColor: Colors.green.shade100,
           onSelected: (_) {
             setState(() {
               filter = value;
@@ -198,6 +239,25 @@ class _BookingsPageState extends State<BookingsPage> {
           },
         ),
       ),
+    );
+  }
+
+  Widget smallButton({
+    required String text,
+    required VoidCallback? onPressed,
+    IconData? icon,
+  }) {
+    if (icon == null) {
+      return ElevatedButton(
+        onPressed: onPressed,
+        child: Text(text),
+      );
+    }
+
+    return ElevatedButton.icon(
+      onPressed: onPressed,
+      icon: Icon(icon),
+      label: Text(text),
     );
   }
 
@@ -211,7 +271,7 @@ class _BookingsPageState extends State<BookingsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: Text("Manage Booking #$id"),
+          title: Text("ຈັດການການຈອງ #$id"),
           content: SizedBox(
             width: 430,
             child: Column(
@@ -221,7 +281,8 @@ class _BookingsPageState extends State<BookingsPage> {
                   leading: const Icon(Icons.sports_soccer),
                   title: Text(booking['field_name'] ?? '-'),
                   subtitle: Text(
-                    "${formatDate(booking['booking_date'])} | ${booking['start_time']} - ${booking['end_time']}",
+                    "${formatDate(booking['booking_date'])} | "
+                    "${formatTime(booking['start_time'])} - ${formatTime(booking['end_time'])}",
                   ),
                 ),
                 ListTile(
@@ -231,8 +292,8 @@ class _BookingsPageState extends State<BookingsPage> {
                 ),
                 ListTile(
                   leading: const Icon(Icons.payments),
-                  title: Text("${booking['total_price']} Kip"),
-                  subtitle: Text("Payment: $paymentStatus"),
+                  title: Text("${booking['total_price'] ?? 0} ກີບ"),
+                  subtitle: Text("ການຊຳລະ: ${laoPayment(paymentStatus)}"),
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -240,55 +301,55 @@ class _BookingsPageState extends State<BookingsPage> {
                   runSpacing: 10,
                   children: [
                     if (slipImage != null && slipImage.toString().isNotEmpty)
-                      ElevatedButton.icon(
+                      smallButton(
+                        text: "ເບິ່ງສະລິບ",
+                        icon: Icons.receipt,
                         onPressed: () => openSlip(slipImage),
-                        icon: const Icon(Icons.receipt),
-                        label: const Text("View Slip"),
                       ),
-                    ElevatedButton(
+                    smallButton(
+                      text: "ອະນຸມັດ",
                       onPressed: paymentStatus == 'paid'
                           ? null
                           : () {
                               Navigator.pop(context);
                               approvePayment(id);
                             },
-                      child: const Text("Approve"),
                     ),
-                    ElevatedButton(
+                    smallButton(
+                      text: "ປະຕິເສດ",
                       onPressed: paymentStatus == 'rejected'
                           ? null
                           : () {
                               Navigator.pop(context);
                               rejectPayment(id);
                             },
-                      child: const Text("Reject"),
                     ),
-                    ElevatedButton(
+                    smallButton(
+                      text: "ຊຳລະແລ້ວ",
                       onPressed: paymentStatus == 'paid'
                           ? null
                           : () {
                               Navigator.pop(context);
                               markPaid(id);
                             },
-                      child: const Text("Paid"),
                     ),
-                    ElevatedButton(
+                    smallButton(
+                      text: "ເຂົ້າໃຊ້",
                       onPressed: status == 'checked_in'
                           ? null
                           : () {
                               Navigator.pop(context);
                               checkIn(id);
                             },
-                      child: const Text("Check-in"),
                     ),
-                    ElevatedButton(
+                    smallButton(
+                      text: "ຍົກເລີກ",
                       onPressed: status == 'cancelled'
                           ? null
                           : () {
                               Navigator.pop(context);
                               cancelBooking(id);
                             },
-                      child: const Text("Cancel"),
                     ),
                   ],
                 ),
@@ -298,7 +359,7 @@ class _BookingsPageState extends State<BookingsPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Close"),
+              child: const Text("ປິດ"),
             ),
           ],
         );
@@ -319,7 +380,7 @@ class _BookingsPageState extends State<BookingsPage> {
             children: [
               const Expanded(
                 child: Text(
-                  "Booking Management",
+                  "ຈັດການການຈອງ",
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 30,
@@ -330,7 +391,7 @@ class _BookingsPageState extends State<BookingsPage> {
               ElevatedButton.icon(
                 onPressed: fetchBookings,
                 icon: const Icon(Icons.refresh),
-                label: const Text("Refresh"),
+                label: const Text("ໂຫຼດຄືນ"),
               ),
             ],
           ),
@@ -352,8 +413,8 @@ class _BookingsPageState extends State<BookingsPage> {
                             enabled: filter != 'all',
                             decoration: InputDecoration(
                               labelText: filter == 'all'
-                                  ? "All booking history"
-                                  : "Filter Date",
+                                  ? "ປະຫວັດການຈອງທັງໝົດ"
+                                  : "ກອງຕາມວັນທີ",
                               prefixIcon: const Icon(Icons.calendar_month),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -383,12 +444,12 @@ class _BookingsPageState extends State<BookingsPage> {
                             scrollDirection: Axis.horizontal,
                             child: Row(
                               children: [
-                                filterButton("All", "all"),
-                                filterButton("Active", "active"),
-                                filterButton("Pending", "pending"),
-                                filterButton("Paid", "paid"),
-                                filterButton("Rejected", "rejected"),
-                                filterButton("Cancelled", "cancelled"),
+                                filterButton("ທັງໝົດ", "all"),
+                                filterButton("ກຳລັງໃຊ້ງານ", "active"),
+                                filterButton("ລໍຖ້າກວດສອບ", "pending"),
+                                filterButton("ຊຳລະແລ້ວ", "paid"),
+                                filterButton("ປະຕິເສດ", "rejected"),
+                                filterButton("ຍົກເລີກ", "cancelled"),
                               ],
                             ),
                           ),
@@ -399,9 +460,13 @@ class _BookingsPageState extends State<BookingsPage> {
                   const Divider(height: 1),
                   Expanded(
                     child: loading
-                        ? const Center(child: CircularProgressIndicator())
+                        ? const Center(
+                            child: CircularProgressIndicator(
+                              color: primaryGreen,
+                            ),
+                          )
                         : filteredBookings.isEmpty
-                            ? const Center(child: Text("No bookings found"))
+                            ? const Center(child: Text("ບໍ່ພົບຂໍ້ມູນການຈອງ"))
                             : SingleChildScrollView(
                                 scrollDirection: Axis.horizontal,
                                 child: ConstrainedBox(
@@ -414,14 +479,15 @@ class _BookingsPageState extends State<BookingsPage> {
                                       dataRowMinHeight: 70,
                                       dataRowMaxHeight: 86,
                                       columns: const [
-                                        DataColumn(label: Text("Booking ID")),
-                                        DataColumn(label: Text("Customer")),
-                                        DataColumn(label: Text("Field")),
-                                        DataColumn(label: Text("Date & Time")),
-                                        DataColumn(label: Text("Amount")),
-                                        DataColumn(label: Text("Status")),
-                                        DataColumn(label: Text("Payment")),
-                                        DataColumn(label: Text("Action")),
+                                        DataColumn(label: Text("ລະຫັດຈອງ")),
+                                        DataColumn(label: Text("ລູກຄ້າ")),
+                                        DataColumn(label: Text("ສະໜາມ")),
+                                        DataColumn(
+                                            label: Text("ວັນທີ ແລະ ເວລາ")),
+                                        DataColumn(label: Text("ຈຳນວນເງິນ")),
+                                        DataColumn(label: Text("ສະຖານະ")),
+                                        DataColumn(label: Text("ການຊຳລະ")),
+                                        DataColumn(label: Text("ຈັດການ")),
                                       ],
                                       rows: filteredBookings.map((booking) {
                                         final paymentStatus =
@@ -506,7 +572,7 @@ class _BookingsPageState extends State<BookingsPage> {
                                                         booking[
                                                             'booking_date'])),
                                                     Text(
-                                                      "${booking['start_time']} - ${booking['end_time']}",
+                                                      "${formatTime(booking['start_time'])} - ${formatTime(booking['end_time'])}",
                                                       overflow:
                                                           TextOverflow.ellipsis,
                                                       style: const TextStyle(
@@ -520,9 +586,9 @@ class _BookingsPageState extends State<BookingsPage> {
                                             ),
                                             DataCell(
                                               SizedBox(
-                                                width: 110,
+                                                width: 120,
                                                 child: Text(
-                                                  "${booking['total_price']}",
+                                                  "${booking['total_price'] ?? 0} ກີບ",
                                                   overflow:
                                                       TextOverflow.ellipsis,
                                                 ),
@@ -530,18 +596,18 @@ class _BookingsPageState extends State<BookingsPage> {
                                             ),
                                             DataCell(
                                               SizedBox(
-                                                width: 130,
+                                                width: 145,
                                                 child: badge(
-                                                  status,
+                                                  laoStatus(status),
                                                   statusColor(status),
                                                 ),
                                               ),
                                             ),
                                             DataCell(
                                               SizedBox(
-                                                width: 130,
+                                                width: 145,
                                                 child: badge(
-                                                  paymentStatus,
+                                                  laoPayment(paymentStatus),
                                                   paymentColor(paymentStatus),
                                                 ),
                                               ),
@@ -553,7 +619,7 @@ class _BookingsPageState extends State<BookingsPage> {
                                                   onPressed: () {
                                                     showManageDialog(booking);
                                                   },
-                                                  child: const Text("Manage"),
+                                                  child: const Text("ຈັດການ"),
                                                 ),
                                               ),
                                             ),
@@ -572,14 +638,14 @@ class _BookingsPageState extends State<BookingsPage> {
                       children: [
                         Expanded(
                           child: Text(
-                            "Showing ${filteredBookings.length} of ${bookings.length} bookings",
+                            "ສະແດງ ${filteredBookings.length} ລາຍການ ຈາກທັງໝົດ ${bookings.length} ລາຍການ",
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(color: Colors.grey),
                           ),
                         ),
                         OutlinedButton(
                           onPressed: () {},
-                          child: const Text("Prev"),
+                          child: const Text("ກ່ອນໜ້າ"),
                         ),
                         const SizedBox(width: 8),
                         ElevatedButton(
@@ -589,7 +655,7 @@ class _BookingsPageState extends State<BookingsPage> {
                         const SizedBox(width: 8),
                         OutlinedButton(
                           onPressed: () {},
-                          child: const Text("Next"),
+                          child: const Text("ຖັດໄປ"),
                         ),
                       ],
                     ),

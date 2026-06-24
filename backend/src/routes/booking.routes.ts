@@ -40,7 +40,7 @@ router.get(
     const [rows] = await pool.query(sql, params);
 
     res.json(rows);
-  }),
+  })
 );
 
 router.post(
@@ -68,7 +68,7 @@ router.post(
       AND start_time < ?
       AND end_time > ?
       `,
-      [field_id, booking_date, end_time, start_time],
+      [field_id, booking_date, end_time, start_time]
     );
 
     if (overlap.length) {
@@ -105,13 +105,13 @@ router.post(
         slip_image || null,
         "pending",
         null,
-      ],
+      ]
     );
 
     res.status(201).json({
       id: result.insertId,
     });
-  }),
+  })
 );
 
 router.patch(
@@ -127,13 +127,13 @@ router.patch(
         payment_status='paid'
       WHERE id=?
       `,
-      [req.params.id],
+      [req.params.id]
     );
 
     res.json({
       message: "paid",
     });
-  }),
+  })
 );
 
 router.patch(
@@ -148,13 +148,34 @@ router.patch(
         checked_in_at=NOW()
       WHERE id=?
       `,
-      [req.params.id],
+      [req.params.id]
     );
 
     res.json({
       message: "checked in",
     });
-  }),
+  })
+);
+
+router.patch(
+  "/:id/cancel-request",
+  auth,
+  asyncHandler(async (req, res) => {
+    await pool.query(
+      `
+      UPDATE bookings
+      SET status='cancel_requested'
+      WHERE id=?
+      AND status!='cancelled'
+      AND status!='checked_in'
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "cancel requested",
+    });
+  })
 );
 
 router.patch(
@@ -167,13 +188,13 @@ router.patch(
       SET status='cancelled'
       WHERE id=?
       `,
-      [req.params.id],
+      [req.params.id]
     );
 
     res.json({
       message: "cancelled",
     });
-  }),
+  })
 );
 
 router.patch(
@@ -190,13 +211,13 @@ router.patch(
         payment_status='pending'
       WHERE id=?
       `,
-      [slip_image, req.params.id],
+      [slip_image, req.params.id]
     );
 
     res.json({
       message: "slip uploaded",
     });
-  }),
+  })
 );
 
 router.patch(
@@ -212,13 +233,13 @@ router.patch(
         payment_status='paid'
       WHERE id=?
       `,
-      [req.params.id],
+      [req.params.id]
     );
 
     res.json({
       message: "payment approved",
     });
-  }),
+  })
 );
 
 router.patch(
@@ -234,13 +255,13 @@ router.patch(
         payment_status='rejected'
       WHERE id=?
       `,
-      [req.params.id],
+      [req.params.id]
     );
 
     res.json({
       message: "payment rejected",
     });
-  }),
+  })
 );
 
 export default router;

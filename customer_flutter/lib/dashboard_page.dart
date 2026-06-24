@@ -3,7 +3,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'change_password_page.dart';
 import 'booking_page.dart';
+import 'edit_profile_page.dart';
 
 const Color primaryGreen = Color(0xFF16A34A);
 const Color lightBg = Color(0xFFF4F8F1);
@@ -30,7 +32,10 @@ class _DashboardPageState extends State<DashboardPage> {
     final pages = [
       HomePage(token: widget.token, customer: widget.customer),
       BookingHistoryPage(token: widget.token, customer: widget.customer),
-      ProfilePage(customer: widget.customer),
+      ProfilePage(
+        customer: widget.customer,
+        token: widget.token,
+      ),
     ];
 
     return Scaffold(
@@ -43,14 +48,6 @@ class _DashboardPageState extends State<DashboardPage> {
         backgroundColor: primaryGreen,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              Navigator.pop(context);
-            },
-          ),
-        ],
       ),
       body: pages[currentIndex],
       bottomNavigationBar: BottomNavigationBar(
@@ -446,28 +443,92 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     }
   }
 
-  Color statusColor(String? status) {
+  Future<void> requestCancel(int bookingId) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(22),
+        ),
+        title: const Text(
+          "ຂໍຍົກເລີກການຈອງ",
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          "ເຈົ້າຕ້ອງການສົ່ງຄຳຂໍຍົກເລີກການຈອງນີ້ໃຫ້ Admin ບໍ?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text("ບໍ່"),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primaryGreen,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text("ຕົກລົງ"),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm != true) return;
+
+    final response = await http.patch(
+      Uri.parse('http://localhost:4000/api/bookings/$bookingId/cancel-request'),
+      headers: {
+        'Authorization': 'Bearer ${widget.token}',
+      },
+    );
+
+    if (response.statusCode == 200) {
+      fetchBookings();
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ສົ່ງຄຳຂໍຍົກເລີກໃຫ້ Admin ແລ້ວ'),
+        ),
+      );
+    } else {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(response.body)),
+      );
+    }
+  }
+
+  Color statusColor(String? status, String? paymentStatus) {
     if (status == 'checked_in') return Colors.green;
     if (status == 'cancelled') return Colors.red;
-    if (status == 'paid') return Colors.blue;
+    if (status == 'cancel_requested') return Colors.deepOrange;
+    if (paymentStatus == 'paid') return Colors.blue;
+    if (paymentStatus == 'rejected') return Colors.red;
     return Colors.orange;
   }
 
-  Color statusBgColor(String? status) {
+  Color statusBgColor(String? status, String? paymentStatus) {
     if (status == 'checked_in') return Colors.green.shade50;
     if (status == 'cancelled') return Colors.red.shade50;
-    if (status == 'paid') return Colors.blue.shade50;
+    if (status == 'cancel_requested') return Colors.orange.shade50;
+    if (paymentStatus == 'paid') return Colors.blue.shade50;
+    if (paymentStatus == 'rejected') return Colors.red.shade50;
     return Colors.orange.shade50;
   }
 
   String statusText(String? status, String? paymentStatus) {
     if (status == 'checked_in') return "ເຂົ້າໃຊ້ແລ້ວ";
     if (status == 'cancelled') return "ຍົກເລີກ";
+    if (status == 'cancel_requested') return "ລໍຖ້າ Admin ອະນຸມັດຍົກເລີກ";
 
-    if (paymentStatus == 'paid') return "ຢືນຢັນແລ້ວ";
-    if (paymentStatus == 'rejected') return "ຖືກປະຕິເສດ";
+    if (paymentStatus == 'paid') return "ຊຳລະແລ້ວ";
+    if (paymentStatus == 'rejected') return "ສະລິບຖືກປະຕິເສດ";
 
-    return "ລໍຖ້າກວດສອບ";
+    return "ລໍຖ້າກວດສອບສະລິບ";
   }
 
   String formatDate(dynamic value) {
@@ -484,10 +545,20 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
     return text;
   }
 
+  bool canRequestCancel(Map booking) {
+    final status = booking['status']?.toString();
+    if (status == 'cancelled') return false;
+    if (status == 'cancel_requested') return false;
+    if (status == 'checked_in') return false;
+    return true;
+  }
+
   Widget bookingCard(Map booking) {
     final status = booking['status']?.toString();
     final paymentStatus = booking['payment_status']?.toString();
-    final color = statusColor(status);
+
+    final color = statusColor(status, paymentStatus);
+    final bookingId = booking['id'] ?? 0;
 
     return Card(
       elevation: 3,
@@ -503,22 +574,21 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           children: [
             Row(
               children: [
-                Expanded(
-                  child: Text(
-                    booking['field_name'] ?? '',
-                    style: const TextStyle(
-                      fontSize: 21,
-                      fontWeight: FontWeight.bold,
-                    ),
+                Text(
+                  'BK-${bookingId.toString().padLeft(3, '0')}',
+                  style: const TextStyle(
+                    color: primaryGreen,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
+                const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 7,
                   ),
                   decoration: BoxDecoration(
-                    color: statusBgColor(status),
+                    color: statusBgColor(status, paymentStatus),
                     borderRadius: BorderRadius.circular(30),
                   ),
                   child: Text(
@@ -533,18 +603,35 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
             ),
             const SizedBox(height: 14),
             Text(
-              "${formatDate(booking['booking_date'])} • "
-              "${formatTime(booking['start_time'])} - ${formatTime(booking['end_time'])}",
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontSize: 15,
+              booking['field_name'] ?? '',
+              style: const TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.calendar_month, size: 18, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  formatDate(booking['booking_date']),
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+                const SizedBox(width: 18),
+                const Icon(Icons.access_time, size: 18, color: Colors.grey),
+                const SizedBox(width: 6),
+                Text(
+                  "${formatTime(booking['start_time'])} - ${formatTime(booking['end_time'])}",
+                  style: TextStyle(color: Colors.grey.shade700),
+                ),
+              ],
+            ),
+            const SizedBox(height: 14),
             Row(
               children: [
                 Text(
-                  "ສະຖານະ: ${statusText(status, paymentStatus)}",
+                  "ລາຄາລວມ",
                   style: TextStyle(
                     color: Colors.grey.shade700,
                   ),
@@ -560,6 +647,29 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
                 ),
               ],
             ),
+            if (canRequestCancel(booking)) ...[
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.cancel_outlined),
+                  label: const Text(
+                    "ຂໍຍົກເລີກການຈອງ",
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.red,
+                    side: const BorderSide(color: Colors.red),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
+                    ),
+                  ),
+                  onPressed: () {
+                    requestCancel(booking['id']);
+                  },
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -605,10 +715,12 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
 
 class ProfilePage extends StatelessWidget {
   final Map customer;
+  final String token;
 
   const ProfilePage({
     super.key,
     required this.customer,
+    required this.token,
   });
 
   @override
@@ -689,17 +801,39 @@ class ProfilePage extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
           ),
           child: Column(
-            children: const [
+            children: [
               ListTile(
-                leading: Icon(Icons.edit, color: primaryGreen),
-                title: Text("ແກ້ໄຂຂໍ້ມູນ"),
-                trailing: Icon(Icons.chevron_right),
+                leading: const Icon(Icons.edit, color: primaryGreen),
+                title: const Text("ແກ້ໄຂຂໍ້ມູນ"),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => EditProfilePage(
+                        token: token,
+                        customer: customer,
+                      ),
+                    ),
+                  );
+                },
               ),
-              Divider(height: 1),
+              const Divider(height: 1),
               ListTile(
-                leading: Icon(Icons.lock, color: primaryGreen),
-                title: Text("ປ່ຽນລະຫັດຜ່ານ"),
-                trailing: Icon(Icons.chevron_right),
+                leading: const Icon(Icons.lock, color: primaryGreen),
+                title: const Text("ປ່ຽນລະຫັດຜ່ານ"),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ChangePasswordPage(
+                        token: token,
+                        customer: customer,
+                      ),
+                    ),
+                  );
+                },
               ),
             ],
           ),

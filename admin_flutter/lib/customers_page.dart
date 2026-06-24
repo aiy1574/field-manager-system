@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'theme.dart';
+
 class CustomersPage extends StatefulWidget {
   final String token;
 
@@ -22,7 +24,17 @@ class _CustomersPageState extends State<CustomersPage> {
 
   final searchController = TextEditingController();
 
+  @override
+  void initState() {
+    super.initState();
+    fetchCustomers();
+  }
+
   Future<void> fetchCustomers() async {
+    setState(() {
+      loading = true;
+    });
+
     final response = await http.get(
       Uri.parse('http://localhost:4000/api/customers'),
       headers: {
@@ -68,194 +80,254 @@ class _CustomersPageState extends State<CustomersPage> {
     return text;
   }
 
-  @override
-  void initState() {
-    super.initState();
-    fetchCustomers();
+  Widget activeBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 12,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.green.shade50,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: const Text(
+        'ໃຊ້ງານ',
+        style: TextStyle(
+          color: primaryGreen,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.all(34),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            "Customer Management",
-            style: TextStyle(
-              fontSize: 30,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 26),
-          Expanded(
-            child: Card(
-              elevation: 3,
-              child: Column(
-                children: [
-                  Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 520,
-                          child: TextField(
-                            controller: searchController,
-                            onChanged: searchCustomers,
-                            decoration: InputDecoration(
-                              hintText: "Search by name, email or phone...",
-                              prefixIcon: const Icon(Icons.search),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        OutlinedButton.icon(
-                          onPressed: fetchCustomers,
-                          icon: const Icon(Icons.filter_list),
-                          label: const Text("Filter"),
-                        ),
-                      ],
+    return Container(
+      color: lightBg,
+      child: Padding(
+        padding: const EdgeInsets.all(34),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'ຈັດການລູກຄ້າ',
+                  style: TextStyle(
+                    fontSize: 30,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const Spacer(),
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryGreen,
+                    foregroundColor: Colors.white,
+                    elevation: 0,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(24),
                     ),
                   ),
-                  const Divider(height: 1),
-                  Expanded(
-                    child: loading
-                        ? const Center(child: CircularProgressIndicator())
-                        : filteredCustomers.isEmpty
-                            ? const Center(child: Text("No customers found"))
-                            : SingleChildScrollView(
-                                child: SizedBox(
-                                  width: double.infinity,
-                                  child: DataTable(
-                                    headingRowHeight: 58,
-                                    dataRowMinHeight: 66,
-                                    dataRowMaxHeight: 76,
-                                    columns: const [
-                                      DataColumn(label: Text("Customer ID")),
-                                      DataColumn(label: Text("Name")),
-                                      DataColumn(label: Text("Contact Info")),
-                                      DataColumn(label: Text("Joined Date")),
-                                      DataColumn(label: Text("Status")),
-                                      DataColumn(label: Text("Actions")),
-                                    ],
-                                    rows: filteredCustomers.map((customer) {
-                                      final id = customer['id'] ?? '-';
-                                      final name = customer['full_name'] ?? '-';
-                                      final phone = customer['phone'] ?? '-';
-                                      final email = customer['email'] ?? '-';
-
-                                      return DataRow(
-                                        cells: [
-                                          DataCell(
-                                            Text(
-                                              "CUST-${id.toString().padLeft(3, '0')}",
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Text(
-                                              name,
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Column(
-                                              mainAxisAlignment:
-                                                  MainAxisAlignment.center,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Text(email),
-                                                const SizedBox(height: 3),
-                                                Text(
-                                                  phone,
-                                                  style: const TextStyle(
-                                                    color: Colors.grey,
-                                                    fontSize: 13,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                          DataCell(
-                                            Text(formatDate(
-                                                customer['created_at'])),
-                                          ),
-                                          DataCell(
-                                            Container(
-                                              padding:
-                                                  const EdgeInsets.symmetric(
-                                                horizontal: 12,
-                                                vertical: 6,
-                                              ),
-                                              decoration: BoxDecoration(
-                                                color: Colors.green.shade50,
-                                                borderRadius:
-                                                    BorderRadius.circular(20),
-                                              ),
-                                              child: Text(
-                                                "Active",
-                                                style: TextStyle(
-                                                  color: Colors.green.shade800,
-                                                  fontWeight: FontWeight.bold,
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          DataCell(
-                                            IconButton(
-                                              icon:
-                                                  const Icon(Icons.more_vert),
-                                              onPressed: () {},
-                                            ),
-                                          ),
-                                        ],
-                                      );
-                                    }).toList(),
+                  onPressed: fetchCustomers,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('ໂຫຼດຄືນ'),
+                ),
+              ],
+            ),
+            const SizedBox(height: 26),
+            Expanded(
+              child: Card(
+                elevation: 3,
+                color: Colors.white,
+                shadowColor: Colors.black12,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 520,
+                            child: TextField(
+                              controller: searchController,
+                              onChanged: searchCustomers,
+                              decoration: InputDecoration(
+                                hintText: 'ຄົ້ນຫາຊື່, ອີເມວ ຫຼື ເບີໂທ...',
+                                prefixIcon: const Icon(
+                                  Icons.search,
+                                  color: primaryGreen,
+                                ),
+                                filled: true,
+                                fillColor: lightBg,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: BorderSide(
+                                    color: Colors.grey.shade200,
+                                  ),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                  borderSide: const BorderSide(
+                                    color: primaryGreen,
+                                    width: 2,
                                   ),
                                 ),
                               ),
-                  ),
-                  const Divider(height: 1),
-                  Padding(
-                    padding: const EdgeInsets.all(18),
-                    child: Row(
-                      children: [
-                        Text(
-                          "Showing ${filteredCustomers.length} of ${customers.length} entries",
-                          style: const TextStyle(color: Colors.grey),
-                        ),
-                        const Spacer(),
-                        OutlinedButton(
-                          onPressed: () {},
-                          child: const Text("Prev"),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () {},
-                          child: const Text("1"),
-                        ),
-                        const SizedBox(width: 8),
-                        OutlinedButton(
-                          onPressed: () {},
-                          child: const Text("Next"),
-                        ),
-                      ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    const Divider(height: 1),
+                    Expanded(
+                      child: loading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: primaryGreen,
+                              ),
+                            )
+                          : filteredCustomers.isEmpty
+                              ? const Center(
+                                  child: Text('ບໍ່ພົບຂໍ້ມູນລູກຄ້າ'),
+                                )
+                              : SingleChildScrollView(
+                                  child: SizedBox(
+                                    width: double.infinity,
+                                    child: DataTable(
+                                      headingRowHeight: 58,
+                                      dataRowMinHeight: 66,
+                                      dataRowMaxHeight: 76,
+                                      headingRowColor:
+                                          MaterialStateProperty.all(
+                                        Colors.green.shade50,
+                                      ),
+                                      columns: const [
+                                        DataColumn(label: Text('ລະຫັດ')),
+                                        DataColumn(label: Text('ຊື່ລູກຄ້າ')),
+                                        DataColumn(
+                                          label: Text('ຂໍ້ມູນຕິດຕໍ່'),
+                                        ),
+                                        DataColumn(
+                                          label: Text('ວັນທີສະໝັກ'),
+                                        ),
+                                        DataColumn(label: Text('ສະຖານະ')),
+                                        DataColumn(label: Text('ຈັດການ')),
+                                      ],
+                                      rows: filteredCustomers.map((customer) {
+                                        final id = customer['id'] ?? '-';
+                                        final name =
+                                            customer['full_name'] ?? '-';
+                                        final phone = customer['phone'] ?? '-';
+                                        final email = customer['email'] ?? '-';
+
+                                        return DataRow(
+                                          cells: [
+                                            DataCell(
+                                              Text(
+                                                'CUST-${id.toString().padLeft(3, '0')}',
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  color: primaryGreen,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Text(
+                                                name,
+                                                style: const TextStyle(
+                                                  fontWeight: FontWeight.w600,
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Column(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment.center,
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.start,
+                                                children: [
+                                                  Text(email),
+                                                  const SizedBox(height: 3),
+                                                  Text(
+                                                    phone,
+                                                    style: const TextStyle(
+                                                      color: Colors.grey,
+                                                      fontSize: 13,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                            DataCell(
+                                              Text(
+                                                formatDate(
+                                                  customer['created_at'],
+                                                ),
+                                              ),
+                                            ),
+                                            DataCell(activeBadge()),
+                                            DataCell(
+                                              IconButton(
+                                                icon: const Icon(
+                                                  Icons.more_vert,
+                                                ),
+                                                color: primaryGreen,
+                                                onPressed: () {},
+                                              ),
+                                            ),
+                                          ],
+                                        );
+                                      }).toList(),
+                                    ),
+                                  ),
+                                ),
+                    ),
+                    const Divider(height: 1),
+                    Padding(
+                      padding: const EdgeInsets.all(18),
+                      child: Row(
+                        children: [
+                          Text(
+                            'ສະແດງ ${filteredCustomers.length} ຈາກ ${customers.length} ລາຍການ',
+                            style: const TextStyle(color: Colors.grey),
+                          ),
+                          const Spacer(),
+                          OutlinedButton(
+                            onPressed: () {},
+                            child: const Text('ກ່ອນໜ້າ'),
+                          ),
+                          const SizedBox(width: 8),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: primaryGreen,
+                              foregroundColor: Colors.white,
+                            ),
+                            onPressed: () {},
+                            child: const Text('1'),
+                          ),
+                          const SizedBox(width: 8),
+                          OutlinedButton(
+                            onPressed: () {},
+                            child: const Text('ຖັດໄປ'),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

@@ -19,17 +19,30 @@ class _RegisterPageState extends State<RegisterPage> {
   final phoneController = TextEditingController();
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
+  final confirmPasswordController = TextEditingController();
 
   bool loading = false;
   bool hidePassword = true;
+  bool hideConfirmPassword = true;
 
   Future<void> register(BuildContext context) async {
     if (fullNameController.text.trim().isEmpty ||
         phoneController.text.trim().isEmpty ||
-        passwordController.text.trim().isEmpty) {
+        passwordController.text.trim().isEmpty ||
+        confirmPasswordController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('ກະລຸນາປ້ອນຊື່, ເບີໂທ ແລະ ລະຫັດຜ່ານ'),
+          content: Text('ກະລຸນາປ້ອນຂໍ້ມູນໃຫ້ຄົບ'),
+        ),
+      );
+      return;
+    }
+
+    if (passwordController.text.trim() !=
+        confirmPasswordController.text.trim()) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ລະຫັດຜ່ານບໍ່ກົງກັນ'),
         ),
       );
       return;
@@ -237,6 +250,26 @@ class _RegisterPageState extends State<RegisterPage> {
                   },
                   icon: Icon(
                     hidePassword ? Icons.visibility : Icons.visibility_off,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              inputBox(
+                controller: confirmPasswordController,
+                label: 'ຢືນຢັນລະຫັດຜ່ານ',
+                hint: 'ປ້ອນລະຫັດຜ່ານອີກຄັ້ງ',
+                icon: Icons.lock_outline,
+                obscure: hideConfirmPassword,
+                suffixIcon: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      hideConfirmPassword = !hideConfirmPassword;
+                    });
+                  },
+                  icon: Icon(
+                    hideConfirmPassword
+                        ? Icons.visibility
+                        : Icons.visibility_off,
                   ),
                 ),
               ),

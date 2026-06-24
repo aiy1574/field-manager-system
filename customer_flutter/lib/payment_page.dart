@@ -71,8 +71,8 @@ class _PaymentPageState extends State<PaymentPage> {
     );
 
     final response = await request.send().timeout(
-      const Duration(seconds: 20),
-    );
+          const Duration(seconds: 20),
+        );
 
     final body = await response.stream.bytesToString();
 
@@ -82,6 +82,114 @@ class _PaymentPageState extends State<PaymentPage> {
     }
 
     throw Exception(body);
+  }
+
+  Future<void> showBookingSuccessDialog(int bookingId) async {
+    await showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          contentPadding: const EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 86,
+                height: 86,
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle,
+                  size: 70,
+                  color: primaryGreen,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'ຈອງສະໜາມສຳເລັດ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 23,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'ລະບົບໄດ້ຮັບການຈອງຂອງເຈົ້າແລ້ວ\n'
+                'ກະລຸນາລໍຖ້າ Admin ກວດສອບສະລິບການຊຳລະ',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey.shade700,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 15),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 18,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.green.shade50,
+                  borderRadius: BorderRadius.circular(18),
+                ),
+                child: Text(
+                  'BK-${bookingId.toString().padLeft(3, '0')}',
+                  style: const TextStyle(
+                    color: primaryGreen,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 15),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: lightBg,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  children: [
+                    summaryRow('ສະໜາມ', widget.field['name'] ?? '-'),
+                    summaryRow('ວັນທີ', widget.bookingDate),
+                    summaryRow('ເວລາ', widget.slot['label']?.toString() ?? '-'),
+                    summaryRow('ລາຄາ', '$price ກີບ'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: primaryGreen,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(28),
+                    ),
+                  ),
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    'ຕົກລົງ',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
   Future<void> confirmPaymentBooking() async {
@@ -124,12 +232,13 @@ class _PaymentPageState extends State<PaymentPage> {
           .timeout(const Duration(seconds: 20));
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ຈອງສະໜາມສຳເລັດ')),
-        );
+        final data = jsonDecode(response.body);
+        final bookingId = data['id'] ?? 0;
 
-        Navigator.pop(context);
-        Navigator.pop(context);
+        await showBookingSuccessDialog(bookingId);
+
+        if (!mounted) return;
+        Navigator.of(context).popUntil((route) => route.isFirst);
       } else if (response.statusCode == 409) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('ເວລານີ້ຖືກຈອງແລ້ວ')),
