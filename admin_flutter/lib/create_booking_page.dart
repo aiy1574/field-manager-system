@@ -1,6 +1,6 @@
+import 'dart:async';
 import 'dart:convert';
 
-import 'theme.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,9 +22,11 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   List fieldServices = [];
 
   int? selectedFieldId;
+  int? selectedSlotId;
   Map<String, dynamic>? selectedSlot;
 
   bool loading = false;
+  Timer? autoRefreshTimer;
 
   final customerNameController = TextEditingController();
   final customerPhoneController = TextEditingController();
@@ -40,6 +42,34 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
         "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
 
     fetchFields();
+
+    autoRefreshTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) {
+        if (!mounted || loading) return;
+        autoRefreshBookingsOnly();
+      },
+    );
+  }
+
+  @override
+  void dispose() {
+    autoRefreshTimer?.cancel();
+
+    customerNameController.dispose();
+    customerPhoneController.dispose();
+    dateController.dispose();
+    noteController.dispose();
+    super.dispose();
+  }
+
+  void showMessage(String message, {bool error = false}) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: error ? Colors.red : Colors.green,
+      ),
+    );
   }
 
   String normalizeTime(dynamic value) {
@@ -61,72 +91,160 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
     return "${slot['hour_end'].toString().padLeft(2, '0')}:00";
   }
 
+  String slotStartForDb(Map<String, dynamic> slot) {
+    return "${slot['hour_start'].toString().padLeft(2, '0')}:00:00";
+  }
+
+  String slotEndForDb(Map<String, dynamic> slot) {
+    return "${slot['hour_end'].toString().padLeft(2, '0')}:00:00";
+  }
+
+  int parsePrice(dynamic value) {
+    if (value == null) return 0;
+    if (value is int) return value;
+    if (value is double) return value.toInt();
+    return double.tryParse(value.toString())?.toInt() ?? 0;
+  }
+
+  String formatPrice(dynamic value) {
+    final number = parsePrice(value);
+
+    return number.toString().replaceAllMapped(
+          RegExp(r'\B(?=(\d{3})+(?!\d))'),
+          (match) => ',',
+        );
+  }
+
   String slotLabel(Map<String, dynamic> slot) {
     final label = slot['label']?.toString() ?? '';
     final start = slotStart(slot);
     final end = slotEnd(slot);
-    final price = slot['price_per_hour']?.toString() ?? '0';
+    final price = formatPrice(slot['price_per_hour']);
 
     if (label.isNotEmpty) {
-      return "$label | $start - $end | $price Kip";
+      return "$label | $price ກີບ";
     }
 
-    return "$start - $end | $price Kip";
+    return "$start - $end | $price ກີບ";
   }
 
   Future<void> fetchFields() async {
-    final response = await http.get(
-      Uri.parse('http://localhost:4000/api/fields'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-      },
-    );
+    setState(() {
+      loading = true;
+    });
 
-    if (response.statusCode == 200) {
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:4000/api/fields'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+
+        setState(() {
+          fields = data;
+
+          if (fields.isNotEmpty) {
+            selectedFieldId = int.tryParse(fields[0]['id'].toString());
+          } else {
+            selectedFieldId = null;
+          }
+        });
+
+        await refreshBookingsAfterChange();
+      } else {
+        setState(() {
+          loading = false;
+        });
+
+        showMessage('ໂຫຼດຂໍ້ມູນສະໜາມບໍ່ສຳເລັດ', error: true);
+      }
+    } catch (e) {
       setState(() {
-        fields = jsonDecode(response.body);
-
-        if (fields.isNotEmpty) {
-          selectedFieldId = fields[0]['id'];
-        }
+        loading = false;
       });
 
-      await refreshBookingsAfterChange();
+      showMessage('ເຊື່ອມຕໍ່ Server ບໍ່ໄດ້: $e', error: true);
     }
   }
 
   Future<void> fetchFieldServices() async {
     if (selectedFieldId == null) return;
 
-    final response = await http.get(
-      Uri.parse(
-        'http://localhost:4000/api/field-services?field_id=$selectedFieldId',
-      ),
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:4000/api/field-services?field_id=$selectedFieldId',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      setState(() {
-        fieldServices = jsonDecode(response.body);
-      });
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+
+        setState(() {
+          fieldServices = jsonDecode(response.body);
+        });
+      } else {
+        showMessage('ໂຫຼດເວລາ ແລະ ລາຄາບໍ່ສຳເລັດ', error: true);
+      }
+    } catch (e) {
+      showMessage('ໂຫຼດເວລາສະໜາມຜິດພາດ: $e', error: true);
     }
   }
 
   Future<void> fetchBookings() async {
     if (selectedFieldId == null) return;
 
-    final response = await http.get(
-      Uri.parse(
-        'http://localhost:4000/api/bookings?date=${dateController.text}&field_id=$selectedFieldId',
-      ),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-      },
-    );
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:4000/api/bookings?date=${dateController.text}&field_id=$selectedFieldId',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      setState(() {
-        bookings = jsonDecode(response.body);
-      });
+      if (response.statusCode == 200) {
+        if (!mounted) return;
+
+        setState(() {
+          bookings = jsonDecode(response.body);
+        });
+      } else {
+        showMessage('ໂຫຼດຂໍ້ມູນການຈອງບໍ່ສຳເລັດ', error: true);
+      }
+    } catch (e) {
+      showMessage('ໂຫຼດການຈອງຜິດພາດ: $e', error: true);
+    }
+  }
+
+  Future<void> autoRefreshBookingsOnly() async {
+    if (selectedFieldId == null) return;
+
+    try {
+      final response = await http.get(
+        Uri.parse(
+          'http://localhost:4000/api/bookings?date=${dateController.text}&field_id=$selectedFieldId',
+        ),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
+
+      if (response.statusCode == 200 && mounted) {
+        setState(() {
+          bookings = jsonDecode(response.body);
+        });
+      }
+    } catch (_) {
+      // ບໍ່ຕ້ອງ show error ທຸກ 5 ວິນາທີ
     }
   }
 
@@ -148,6 +266,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
       if (!isSlotBooked(slot)) {
         setState(() {
           selectedSlot = slot;
+          selectedSlotId = int.tryParse(slot['id'].toString());
         });
         return;
       }
@@ -155,6 +274,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
 
     setState(() {
       selectedSlot = null;
+      selectedSlotId = null;
     });
   }
 
@@ -162,6 +282,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
     setState(() {
       loading = true;
       selectedSlot = null;
+      selectedSlotId = null;
     });
 
     await fetchFieldServices();
@@ -174,52 +295,46 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   Future<int?> createCustomer() async {
-    final response = await http.post(
-      Uri.parse('http://localhost:4000/api/customers'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.token}',
-      },
-      body: jsonEncode({
-        'full_name': customerNameController.text.trim(),
-        'phone': customerPhoneController.text.trim(),
-      }),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:4000/api/customers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+        body: jsonEncode({
+          'full_name': customerNameController.text.trim(),
+          'phone': customerPhoneController.text.trim(),
+        }),
+      );
 
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      return data['id'];
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['id'];
+      }
+
+      showMessage(response.body, error: true);
+      return null;
+    } catch (e) {
+      showMessage('ສ້າງລູກຄ້າຜິດພາດ: $e', error: true);
+      return null;
     }
-
-    return null;
   }
 
   Future<void> createBooking() async {
     if (customerNameController.text.trim().isEmpty ||
         customerPhoneController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please enter customer name and phone"),
-        ),
-      );
+      showMessage('ກະລຸນາປ້ອນຊື່ ແລະ ເບີໂທລູກຄ້າ', error: true);
       return;
     }
 
     if (selectedFieldId == null || selectedSlot == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select field and available time slot"),
-        ),
-      );
+      showMessage('ກະລຸນາເລືອກສະໜາມ ແລະ ເວລາວ່າງ', error: true);
       return;
     }
 
     if (isSlotBooked(selectedSlot!)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("This time slot is already booked"),
-        ),
-      );
+      showMessage('ເວລານີ້ຖືກຈອງແລ້ວ', error: true);
       await refreshBookingsAfterChange();
       return;
     }
@@ -234,73 +349,81 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
       setState(() {
         loading = false;
       });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Create customer failed"),
-        ),
-      );
       return;
     }
 
-    final response = await http.post(
-      Uri.parse('http://localhost:4000/api/bookings'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ${widget.token}',
-      },
-      body: jsonEncode({
-        'field_id': selectedFieldId,
-        'customer_id': customerId,
-        'booking_date': dateController.text,
-        'start_time': slotStart(selectedSlot!),
-        'end_time': slotEnd(selectedSlot!),
-        'total_price': selectedSlot!['price_per_hour'],
-        'note': noteController.text.trim(),
-      }),
-    );
-
-    setState(() {
-      loading = false;
-    });
-
-    if (response.statusCode == 201 || response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Booking created successfully"),
-        ),
+    try {
+      final response = await http.post(
+        Uri.parse('http://localhost:4000/api/bookings'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ${widget.token}',
+        },
+        body: jsonEncode({
+          'field_id': selectedFieldId,
+          'customer_id': customerId,
+          'booking_date': dateController.text,
+          'start_time': slotStartForDb(selectedSlot!),
+          'end_time': slotEndForDb(selectedSlot!),
+          'total_price': selectedSlot!['price_per_hour'],
+          'note': noteController.text.trim(),
+          'slip_image': null,
+        }),
       );
 
-      Navigator.pop(context);
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(response.body),
-        ),
-      );
+      setState(() {
+        loading = false;
+      });
 
-      await refreshBookingsAfterChange();
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        showMessage('ສ້າງການຈອງສຳເລັດ');
+
+        customerNameController.clear();
+        customerPhoneController.clear();
+        noteController.clear();
+
+        await refreshBookingsAfterChange();
+      } else if (response.statusCode == 409) {
+        showMessage('ເວລານີ້ຖືກຈອງແລ້ວ', error: true);
+        await refreshBookingsAfterChange();
+      } else {
+        showMessage(response.body, error: true);
+        await refreshBookingsAfterChange();
+      }
+    } catch (e) {
+      setState(() {
+        loading = false;
+      });
+
+      showMessage('ສ້າງການຈອງຜິດພາດ: $e', error: true);
     }
   }
 
   Widget fieldDropdown() {
     return DropdownButtonFormField<int>(
       value: selectedFieldId,
-      decoration: const InputDecoration(
-        labelText: "Field",
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.stadium),
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'ສະໜາມ',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        prefixIcon: const Icon(Icons.stadium),
       ),
       items: fields.map<DropdownMenuItem<int>>((field) {
         return DropdownMenuItem<int>(
-          value: field['id'],
-          child: Text(field['name'] ?? '-'),
+          value: int.tryParse(field['id'].toString()),
+          child: Text(
+            field['name'] ?? '-',
+            overflow: TextOverflow.ellipsis,
+          ),
         );
       }).toList(),
       onChanged: (value) async {
         setState(() {
           selectedFieldId = value;
           selectedSlot = null;
+          selectedSlotId = null;
         });
 
         await refreshBookingsAfterChange();
@@ -309,30 +432,51 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
   }
 
   Widget timeSlotDropdown() {
-    return DropdownButtonFormField<Map<String, dynamic>>(
-      value: selectedSlot,
-      decoration: const InputDecoration(
-        labelText: "Time Slot",
-        border: OutlineInputBorder(),
-        prefixIcon: Icon(Icons.access_time),
+    return DropdownButtonFormField<int>(
+      value: selectedSlotId,
+      isExpanded: true,
+      decoration: InputDecoration(
+        labelText: 'ເວລາຈອງ',
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        prefixIcon: const Icon(Icons.access_time),
       ),
-      items: fieldServices.map<DropdownMenuItem<Map<String, dynamic>>>((item) {
+      items: fieldServices.map<DropdownMenuItem<int>>((item) {
         final slot = Map<String, dynamic>.from(item);
         final booked = isSlotBooked(slot);
+        final slotId = int.tryParse(slot['id'].toString());
 
-        return DropdownMenuItem<Map<String, dynamic>>(
-          value: booked ? null : slot,
+        return DropdownMenuItem<int>(
+          value: slotId,
           enabled: !booked,
           child: Text(
-            booked ? "❌ ${slotLabel(slot)} - Booked" : "✅ ${slotLabel(slot)}",
+            booked
+                ? '❌ ${slotLabel(slot)} - ຖືກຈອງແລ້ວ'
+                : '✅ ${slotLabel(slot)}',
+            overflow: TextOverflow.ellipsis,
           ),
         );
       }).toList(),
       onChanged: (value) {
         if (value == null) return;
 
+        Map<String, dynamic>? foundSlot;
+
+        for (final item in fieldServices) {
+          final itemId = int.tryParse(item['id'].toString());
+
+          if (itemId == value) {
+            foundSlot = Map<String, dynamic>.from(item);
+            break;
+          }
+        }
+
+        if (foundSlot == null) return;
+
         setState(() {
-          selectedSlot = value;
+          selectedSlotId = value;
+          selectedSlot = foundSlot;
         });
       },
     );
@@ -340,8 +484,8 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
 
   Widget priceCard() {
     final price = selectedSlot == null
-        ? "-"
-        : "${selectedSlot!['price_per_hour']} Kip";
+        ? '-'
+        : '${formatPrice(selectedSlot!['price_per_hour'])} ກີບ';
 
     return Card(
       elevation: 2,
@@ -358,19 +502,22 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
             ),
             const SizedBox(width: 14),
             const Text(
-              "Total Price:",
+              'ລາຄາລວມ:',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w600,
               ),
             ),
             const SizedBox(width: 10),
-            Text(
-              price,
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: Colors.green.shade700,
+            Expanded(
+              child: Text(
+                price,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade700,
+                ),
               ),
             ),
           ],
@@ -388,7 +535,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const Text(
-              "Booked Time Today",
+              'ເວລາທີ່ຖືກຈອງໃນວັນນີ້',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
@@ -396,20 +543,20 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
             ),
             const Divider(),
             if (bookings.isEmpty)
-              const Text("No booking on this date")
+              const Text('ຍັງບໍ່ມີການຈອງໃນວັນນີ້')
             else
               ...bookings.map((booking) {
                 return ListTile(
                   dense: true,
                   leading: const Icon(Icons.event_busy),
                   title: Text(
-                    "${normalizeTime(booking['start_time'])} - ${normalizeTime(booking['end_time'])}",
+                    '${normalizeTime(booking['start_time'])} - ${normalizeTime(booking['end_time'])}',
                   ),
                   subtitle: Text(
-                    "${booking['customer_name'] ?? '-'} | ${booking['status'] ?? '-'}",
+                    '${booking['customer_name'] ?? '-'} | ${booking['status'] ?? '-'}',
                   ),
                 );
-              }).toList(),
+              }),
           ],
         ),
       ),
@@ -427,7 +574,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
             children: [
               const Expanded(
                 child: Text(
-                  "Create Booking",
+                  'ຈອງເດີ່ນໜ້າຮ້ານ',
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
                     fontSize: 30,
@@ -438,7 +585,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
               ElevatedButton.icon(
                 onPressed: loading ? null : refreshBookingsAfterChange,
                 icon: const Icon(Icons.refresh),
-                label: const Text("Refresh"),
+                label: const Text('ໂຫຼດຄືນ'),
               ),
             ],
           ),
@@ -461,29 +608,36 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
                                 const SizedBox(height: 16),
                                 TextField(
                                   controller: customerNameController,
-                                  decoration: const InputDecoration(
-                                    labelText: "Customer Name",
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.person),
+                                  decoration: InputDecoration(
+                                    labelText: 'ຊື່ລູກຄ້າ',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    prefixIcon: const Icon(Icons.person),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 TextField(
                                   controller: customerPhoneController,
-                                  decoration: const InputDecoration(
-                                    labelText: "Customer Phone",
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.phone),
+                                  decoration: InputDecoration(
+                                    labelText: 'ເບີໂທລູກຄ້າ',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    prefixIcon: const Icon(Icons.phone),
                                   ),
                                 ),
                                 const SizedBox(height: 16),
                                 TextField(
                                   controller: dateController,
                                   readOnly: true,
-                                  decoration: const InputDecoration(
-                                    labelText: "Booking Date",
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.calendar_month),
+                                  decoration: InputDecoration(
+                                    labelText: 'ວັນທີຈອງ',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    prefixIcon:
+                                        const Icon(Icons.calendar_month),
                                   ),
                                   onTap: () async {
                                     final pickedDate = await showDatePicker(
@@ -495,7 +649,7 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
 
                                     if (pickedDate != null) {
                                       final formatted =
-                                          "${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}";
+                                          '${pickedDate.year}-${pickedDate.month.toString().padLeft(2, '0')}-${pickedDate.day.toString().padLeft(2, '0')}';
 
                                       setState(() {
                                         dateController.text = formatted;
@@ -513,10 +667,12 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
                                 TextField(
                                   controller: noteController,
                                   maxLines: 3,
-                                  decoration: const InputDecoration(
-                                    labelText: "Note",
-                                    border: OutlineInputBorder(),
-                                    prefixIcon: Icon(Icons.note),
+                                  decoration: InputDecoration(
+                                    labelText: 'ໝາຍເຫດ',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    prefixIcon: const Icon(Icons.note),
                                   ),
                                 ),
                                 const SizedBox(height: 24),
@@ -528,7 +684,10 @@ class _CreateBookingPageState extends State<CreateBookingPage> {
                                         ? null
                                         : createBooking,
                                     icon: const Icon(Icons.add),
-                                    label: const Text("Create Booking"),
+                                    label: const Text(
+                                      'ສ້າງການຈອງ',
+                                      style: TextStyle(fontSize: 17),
+                                    ),
                                   ),
                                 ),
                               ],

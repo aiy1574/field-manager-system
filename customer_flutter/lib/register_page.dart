@@ -8,7 +8,7 @@ const Color darkGreen = Color(0xFF059669);
 const Color lightBg = Color(0xFFF4F8F1);
 
 class RegisterPage extends StatefulWidget {
-  RegisterPage({super.key});
+  const RegisterPage({super.key});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();

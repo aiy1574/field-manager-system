@@ -26,19 +26,18 @@ router.get(
     const params: any[] = [];
 
     if (date) {
-      sql += " AND b.booking_date=?";
+      sql += " AND b.booking_date = ?";
       params.push(date);
     }
 
     if (field_id) {
-      sql += " AND b.field_id=?";
+      sql += " AND b.field_id = ?";
       params.push(field_id);
     }
 
     sql += " ORDER BY b.booking_date DESC, b.start_time ASC";
 
     const [rows] = await pool.query(sql, params);
-
     res.json(rows);
   })
 );
@@ -58,13 +57,19 @@ router.post(
       slip_image,
     } = req.body;
 
+    if (!field_id || !customer_id || !booking_date || !start_time || !end_time) {
+      return res.status(400).json({
+        message: "ກະລຸນາປ້ອນຂໍ້ມູນການຈອງໃຫ້ຄົບ",
+      });
+    }
+
     const [overlap]: any = await pool.query(
       `
       SELECT id
       FROM bookings
-      WHERE field_id=?
-      AND booking_date=?
-      AND status!='cancelled'
+      WHERE field_id = ?
+      AND booking_date = ?
+      AND status != 'cancelled'
       AND start_time < ?
       AND end_time > ?
       `,
@@ -73,7 +78,7 @@ router.post(
 
     if (overlap.length) {
       return res.status(409).json({
-        message: "This time is already booked",
+        message: "ເວລານີ້ຖືກຈອງແລ້ວ",
       });
     }
 
@@ -90,9 +95,11 @@ router.post(
         note,
         slip_image,
         payment_status,
+        status,
+        paid,
         created_by
       )
-      VALUES (?,?,?,?,?,?,?,?,?,?)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)
       `,
       [
         field_id,
@@ -104,12 +111,15 @@ router.post(
         note || null,
         slip_image || null,
         "pending",
+        "booked",
+        0,
         null,
       ]
     );
 
     res.status(201).json({
       id: result.insertId,
+      message: "ສ້າງການຈອງສຳເລັດ",
     });
   })
 );
@@ -122,100 +132,16 @@ router.patch(
       `
       UPDATE bookings
       SET
-        paid=1,
-        paid_at=NOW(),
-        payment_status='paid'
-      WHERE id=?
+        paid = 1,
+        paid_at = NOW(),
+        payment_status = 'paid'
+      WHERE id = ?
       `,
       [req.params.id]
     );
 
     res.json({
-      message: "paid",
-    });
-  })
-);
-
-router.patch(
-  "/:id/checkin",
-  auth,
-  asyncHandler(async (req, res) => {
-    await pool.query(
-      `
-      UPDATE bookings
-      SET
-        status='checked_in',
-        checked_in_at=NOW()
-      WHERE id=?
-      `,
-      [req.params.id]
-    );
-
-    res.json({
-      message: "checked in",
-    });
-  })
-);
-
-router.patch(
-  "/:id/cancel-request",
-  auth,
-  asyncHandler(async (req, res) => {
-    await pool.query(
-      `
-      UPDATE bookings
-      SET status='cancel_requested'
-      WHERE id=?
-      AND status!='cancelled'
-      AND status!='checked_in'
-      `,
-      [req.params.id]
-    );
-
-    res.json({
-      message: "cancel requested",
-    });
-  })
-);
-
-router.patch(
-  "/:id/cancel",
-  auth,
-  asyncHandler(async (req, res) => {
-    await pool.query(
-      `
-      UPDATE bookings
-      SET status='cancelled'
-      WHERE id=?
-      `,
-      [req.params.id]
-    );
-
-    res.json({
-      message: "cancelled",
-    });
-  })
-);
-
-router.patch(
-  "/:id/slip",
-  auth,
-  asyncHandler(async (req, res) => {
-    const { slip_image } = req.body;
-
-    await pool.query(
-      `
-      UPDATE bookings
-      SET
-        slip_image=?,
-        payment_status='pending'
-      WHERE id=?
-      `,
-      [slip_image, req.params.id]
-    );
-
-    res.json({
-      message: "slip uploaded",
+      message: "ຊຳລະແລ້ວ",
     });
   })
 );
@@ -228,16 +154,16 @@ router.patch(
       `
       UPDATE bookings
       SET
-        paid=1,
-        paid_at=NOW(),
-        payment_status='paid'
-      WHERE id=?
+        paid = 1,
+        paid_at = NOW(),
+        payment_status = 'paid'
+      WHERE id = ?
       `,
       [req.params.id]
     );
 
     res.json({
-      message: "payment approved",
+      message: "ອະນຸມັດການຊຳລະສຳເລັດ",
     });
   })
 );
@@ -250,16 +176,199 @@ router.patch(
       `
       UPDATE bookings
       SET
-        paid=0,
-        paid_at=NULL,
-        payment_status='rejected'
-      WHERE id=?
+        paid = 0,
+        paid_at = NULL,
+        payment_status = 'rejected'
+      WHERE id = ?
       `,
       [req.params.id]
     );
 
     res.json({
-      message: "payment rejected",
+      message: "ປະຕິເສດການຊຳລະສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/partial-payment",
+  auth,
+  asyncHandler(async (req, res) => {
+    await pool.query(
+      `
+      UPDATE bookings
+      SET
+        paid = 0,
+        paid_at = NULL,
+        payment_status = 'partial'
+      WHERE id = ?
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "ບັນທຶກສະຖານະຈ່າຍບໍ່ຄົບສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/checkin",
+  auth,
+  asyncHandler(async (req, res) => {
+    const [rows]: any = await pool.query(
+      `
+      SELECT id, payment_status, status
+      FROM bookings
+      WHERE id = ?
+      `,
+      [req.params.id]
+    );
+
+    if (rows.length === 0) {
+      return res.status(404).json({
+        message: "ບໍ່ພົບການຈອງ",
+      });
+    }
+
+    const booking = rows[0];
+
+    if (booking.status === "cancelled") {
+      return res.status(400).json({
+        message: "ການຈອງນີ້ຖືກຍົກເລີກແລ້ວ",
+      });
+    }
+
+    if (booking.payment_status !== "paid") {
+      return res.status(400).json({
+        message: "ຕ້ອງຊຳລະເງິນກ່ອນຈຶ່ງ Check-in ໄດ້",
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE bookings
+      SET
+        status = 'checked_in',
+        checked_in_at = NOW()
+      WHERE id = ?
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "Check-in ສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/cancel-request",
+  auth,
+  asyncHandler(async (req, res) => {
+    await pool.query(
+      `
+      UPDATE bookings
+      SET status = 'cancel_requested'
+      WHERE id = ?
+      AND status != 'cancelled'
+      AND status != 'checked_in'
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "ສົ່ງຄຳຂໍຍົກເລີກສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/approve-cancel",
+  auth,
+  asyncHandler(async (req, res) => {
+    await pool.query(
+      `
+      UPDATE bookings
+      SET status = 'cancelled'
+      WHERE id = ?
+      AND status = 'cancel_requested'
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "ອະນຸມັດການຍົກເລີກສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/reject-cancel",
+  auth,
+  asyncHandler(async (req, res) => {
+    await pool.query(
+      `
+      UPDATE bookings
+      SET status = 'booked'
+      WHERE id = ?
+      AND status = 'cancel_requested'
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "ປະຕິເສດຄຳຂໍຍົກເລີກສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/cancel",
+  auth,
+  asyncHandler(async (req, res) => {
+    await pool.query(
+      `
+      UPDATE bookings
+      SET status = 'cancelled'
+      WHERE id = ?
+      `,
+      [req.params.id]
+    );
+
+    res.json({
+      message: "ຍົກເລີກສຳເລັດ",
+    });
+  })
+);
+
+router.patch(
+  "/:id/slip",
+  auth,
+  asyncHandler(async (req, res) => {
+    const { slip_image } = req.body;
+
+    if (!slip_image) {
+      return res.status(400).json({
+        message: "ບໍ່ພົບຮູບສະລິບ",
+      });
+    }
+
+    await pool.query(
+      `
+      UPDATE bookings
+      SET
+        slip_image = ?,
+        payment_status = 'pending',
+        paid = 0,
+        paid_at = NULL
+      WHERE id = ?
+      `,
+      [slip_image, req.params.id]
+    );
+
+    res.json({
+      message: "ອັບໂຫຼດສະລິບສຳເລັດ",
     });
   })
 );

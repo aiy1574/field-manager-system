@@ -647,7 +647,7 @@ class _ProductsPageState extends State<ProductsPage> {
                                         dataRowMinHeight: 66,
                                         dataRowMaxHeight: 76,
                                         headingRowColor:
-                                            MaterialStateProperty.all(
+                                            WidgetStateProperty.all(
                                           Colors.green.shade50,
                                         ),
                                         columns: const [

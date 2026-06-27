@@ -385,7 +385,7 @@ class _HomePageState extends State<HomePage> {
           else
             ...filteredFields.map((field) {
               return fieldCard(field);
-            }).toList(),
+            }),
         ],
       ),
     );
@@ -706,7 +706,7 @@ class _BookingHistoryPageState extends State<BookingHistoryPage> {
           const SizedBox(height: 18),
           ...bookings.map((booking) {
             return bookingCard(booking);
-          }).toList(),
+          }),
         ],
       ),
     );

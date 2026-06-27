@@ -3,12 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'theme.dart';
 import 'bookings_page.dart';
+import 'create_booking_page.dart';
 import 'customers_page.dart';
 import 'fields_page.dart';
 import 'products_page.dart';
 import 'reports_page.dart';
+import 'sales_history_page.dart';
 import 'sell_products_page.dart';
 
 const Color primaryGreen = Color(0xFF16A34A);
@@ -17,10 +18,12 @@ const Color lightBg = Color(0xFFF4F8F1);
 
 class AdminHomePage extends StatefulWidget {
   final String token;
+  final String role;
 
   const AdminHomePage({
     super.key,
     required this.token,
+    required this.role,
   });
 
   @override
@@ -29,7 +32,11 @@ class AdminHomePage extends StatefulWidget {
 
 class _AdminHomePageState extends State<AdminHomePage> {
   int selectedIndex = 0;
-  Map dashboard = {};
+  Map<String, dynamic> dashboard = {};
+
+  bool get isOwner {
+    return widget.role == 'owner' || widget.role == 'admin';
+  }
 
   @override
   void initState() {
@@ -38,18 +45,28 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   Future<void> fetchDashboard() async {
-    final response = await http.get(
-      Uri.parse('http://localhost:4000/api/dashboard'),
-      headers: {
-        'Authorization': 'Bearer ${widget.token}',
-      },
-    );
+    try {
+      final response = await http.get(
+        Uri.parse('http://localhost:4000/api/dashboard'),
+        headers: {
+          'Authorization': 'Bearer ${widget.token}',
+        },
+      );
 
-    if (response.statusCode == 200) {
-      setState(() {
-        dashboard = jsonDecode(response.body);
-      });
+      if (response.statusCode == 200) {
+        setState(() {
+          dashboard = jsonDecode(response.body);
+        });
+      }
+    } catch (e) {
+      debugPrint('Dashboard error: $e');
     }
+  }
+
+  void goToPage(int index) {
+    setState(() {
+      selectedIndex = index;
+    });
   }
 
   Widget sidebarItem(String title, IconData icon, int index) {
@@ -69,15 +86,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
         ),
         title: Text(
           title,
+          overflow: TextOverflow.ellipsis,
           style: TextStyle(
             color: selected ? primaryGreen : Colors.black87,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
         onTap: () {
-          setState(() {
-            selectedIndex = index;
-          });
+          goToPage(index);
         },
       ),
     );
@@ -170,6 +186,29 @@ class _AdminHomePageState extends State<AdminHomePage> {
                 ),
               ),
               const Spacer(),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 9,
+                ),
+                decoration: BoxDecoration(
+                  color: isOwner ? Colors.green.shade50 : Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isOwner
+                        ? Colors.green.shade100
+                        : Colors.orange.shade100,
+                  ),
+                ),
+                child: Text(
+                  isOwner ? 'Owner/Admin' : 'Staff',
+                  style: TextStyle(
+                    color: isOwner ? primaryGreen : Colors.deepOrange,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: primaryGreen,
@@ -252,12 +291,38 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   Widget currentPage() {
     if (selectedIndex == 0) return dashboardPage();
-    if (selectedIndex == 1) return FieldsPage(token: widget.token);
-    if (selectedIndex == 2) return CustomersPage(token: widget.token);
-    if (selectedIndex == 3) return BookingsPage(token: widget.token);
-    if (selectedIndex == 4) return ProductsPage(token: widget.token);
-    if (selectedIndex == 5) return SellProductsPage(token: widget.token);
-    if (selectedIndex == 6) return ReportsPage(token: widget.token);
+
+    if (selectedIndex == 1 && isOwner) {
+      return FieldsPage(token: widget.token);
+    }
+
+    if (selectedIndex == 2 && isOwner) {
+      return CustomersPage(token: widget.token);
+    }
+
+    if (selectedIndex == 3) {
+      return BookingsPage(token: widget.token);
+    }
+
+    if (selectedIndex == 4) {
+      return CreateBookingPage(token: widget.token);
+    }
+
+    if (selectedIndex == 5 && isOwner) {
+      return ProductsPage(token: widget.token);
+    }
+
+    if (selectedIndex == 6) {
+      return SellProductsPage(token: widget.token);
+    }
+
+    if (selectedIndex == 7) {
+      return SalesHistoryPage(token: widget.token);
+    }
+
+    if (selectedIndex == 8 && isOwner) {
+      return ReportsPage(token: widget.token);
+    }
 
     return dashboardPage();
   }
@@ -301,8 +366,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       ),
                       borderRadius: BorderRadius.circular(22),
                     ),
-                    child: Row(
-                      children: const [
+                    child: const Row(
+                      children: [
                         Icon(
                           Icons.sports_soccer,
                           color: Colors.white,
@@ -325,14 +390,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
                   ),
                 ),
                 const SizedBox(height: 24),
-
                 sidebarItem('ໜ້າຫຼັກ', Icons.dashboard, 0),
-                sidebarItem('ຈັດການສະໜາມ', Icons.stadium, 1),
-                sidebarItem('ລູກຄ້າ', Icons.people, 2),
+
+                if (isOwner)
+                  sidebarItem('ຈັດການສະໜາມ', Icons.stadium, 1),
+
+                if (isOwner)
+                  sidebarItem('ລູກຄ້າ', Icons.people, 2),
+
                 sidebarItem('ຈັດການການຈອງ', Icons.calendar_month, 3),
-                sidebarItem('ສິນຄ້າ', Icons.shopping_cart, 4),
-                sidebarItem('ຂາຍສິນຄ້າ', Icons.point_of_sale, 5),
-                sidebarItem('ລາຍງານ', Icons.bar_chart, 6),
+                sidebarItem('ຈອງເດີ່ນ', Icons.add_business, 4),
+
+                if (isOwner)
+                  sidebarItem('ສິນຄ້າ', Icons.shopping_cart, 5),
+
+                sidebarItem('ຂາຍສິນຄ້າ', Icons.point_of_sale, 6),
+                sidebarItem('ປະຫວັດການຂາຍ', Icons.history, 7),
+
+                if (isOwner)
+                  sidebarItem('ລາຍງານ', Icons.bar_chart, 8),
 
                 const Spacer(),
 
@@ -354,7 +430,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       ),
                     ),
                     onTap: () {
-                      Navigator.pop(context);
+                      Navigator.pushNamedAndRemoveUntil(
+                        context,
+                        '/login',
+                        (route) => false,
+                      );
                     },
                   ),
                 ),
