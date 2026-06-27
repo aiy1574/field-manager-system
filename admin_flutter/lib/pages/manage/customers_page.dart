@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'theme.dart';
+import '../../theme.dart';
 
 class CustomersPage extends StatefulWidget {
   final String token;
@@ -206,8 +206,7 @@ class _CustomersPageState extends State<CustomersPage> {
                                       headingRowHeight: 58,
                                       dataRowMinHeight: 66,
                                       dataRowMaxHeight: 76,
-                                      headingRowColor:
-                                          WidgetStateProperty.all(
+                                      headingRowColor: WidgetStateProperty.all(
                                         Colors.green.shade50,
                                       ),
                                       columns: const [

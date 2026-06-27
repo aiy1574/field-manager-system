@@ -129,9 +129,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 25),
-
                   Wrap(
                     spacing: 18,
                     runSpacing: 18,
@@ -163,9 +161,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       ),
                     ],
                   ),
-
                   const SizedBox(height: 30),
-
                   const Text(
                     "Revenue List",
                     style: TextStyle(
@@ -173,9 +169,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 15),
-
                   Card(
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,

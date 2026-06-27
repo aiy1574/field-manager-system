@@ -183,7 +183,7 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                     ),
                     const SizedBox(height: 10),
                     DataTable(
-                      headingRowColor: MaterialStateProperty.all(
+                      headingRowColor: WidgetStateProperty.all(
                         Colors.green.shade50,
                       ),
                       columns: const [
@@ -361,8 +361,7 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                               ),
                               child: SingleChildScrollView(
                                 child: DataTable(
-                                  headingRowColor:
-                                      MaterialStateProperty.all(
+                                  headingRowColor: WidgetStateProperty.all(
                                     Colors.green.shade50,
                                   ),
                                   columns: const [
@@ -391,7 +390,8 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                                           ),
                                         ),
                                         DataCell(
-                                          Text(formatDateTime(sale['created_at'])),
+                                          Text(formatDateTime(
+                                              sale['created_at'])),
                                         ),
                                         DataCell(
                                           Text(
@@ -402,7 +402,8 @@ class _SalesHistoryPageState extends State<SalesHistoryPage> {
                                           ),
                                         ),
                                         DataCell(
-                                          Text(paymentText(sale['payment_method'])),
+                                          Text(paymentText(
+                                              sale['payment_method'])),
                                         ),
                                         DataCell(
                                           Text(

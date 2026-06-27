@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-import 'admin_home.dart';
+import 'pages/dashboard/admin_home.dart';
 
 void main() {
   runApp(const MyApp());
@@ -12,20 +12,18 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  static const String appTitle = 'ST Football Admin';
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'ST Football Admin',
+      title: appTitle,
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.green,
-        scaffoldBackgroundColor: lightBg,
       ),
       home: const LoginPage(),
-      routes: {
-        '/login': (context) => const LoginPage(),
-      },
     );
   }
 }
@@ -38,18 +36,21 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final emailController = TextEditingController();
-  final passwordController = TextEditingController();
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
 
   bool loading = false;
-  bool hidePassword = true;
 
   Future<void> login() async {
     final email = emailController.text.trim();
-    final password = passwordController.text.trim();
+    final password = passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      showMessage('ກະລຸນາປ້ອນ Email ແລະ Password');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ກະລຸນາປ້ອນ Email ແລະ Password'),
+        ),
+      );
       return;
     }
 
@@ -69,42 +70,52 @@ class _LoginPageState extends State<LoginPage> {
         }),
       );
 
-      final data = jsonDecode(response.body);
+      if (!mounted) return;
 
       if (response.statusCode == 200) {
-        final token = data['token']?.toString() ?? '';
+        final data = jsonDecode(response.body);
 
-        String role = 'admin';
+        final String token = data['token']?.toString() ?? '';
 
-        if (data['role'] != null) {
-          role = data['role'].toString();
-        } else if (data['user'] != null && data['user']['role'] != null) {
-          role = data['user']['role'].toString();
-        }
+        final Map<String, dynamic> user =
+            data['user'] is Map<String, dynamic> ? data['user'] : {};
+
+        final String role =
+            user['role']?.toString() ?? data['role']?.toString() ?? 'staff';
 
         if (token.isEmpty) {
-          showMessage('ບໍ່ພົບ Token ຈາກ Server');
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Login ສຳເລັດ ແຕ່ບໍ່ພົບ token'),
+            ),
+          );
           return;
         }
-
-        if (!mounted) return;
 
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (_) => AdminHomePage(
+            builder: (context) => AdminHomePage(
               token: token,
               role: role,
             ),
           ),
         );
       } else {
-        showMessage(
-          data['message']?.toString() ?? 'ເຂົ້າສູ່ລະບົບບໍ່ສຳເລັດ',
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(response.body),
+          ),
         );
       }
     } catch (e) {
-      showMessage('ເຊື່ອມຕໍ່ Server ບໍ່ໄດ້: $e');
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('ເຊື່ອມຕໍ່ server ບໍ່ໄດ້: $e'),
+        ),
+      );
     } finally {
       if (mounted) {
         setState(() {
@@ -112,15 +123,6 @@ class _LoginPageState extends State<LoginPage> {
         });
       }
     }
-  }
-
-  void showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(message),
-        backgroundColor: Colors.red,
-      ),
-    );
   }
 
   @override
@@ -133,121 +135,87 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: lightBg,
+      backgroundColor: const Color(0xFFF8FCF5),
       body: Center(
-        child: SingleChildScrollView(
-          child: Container(
-            width: 420,
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(28),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 25,
-                  offset: const Offset(0, 12),
-                ),
-              ],
+        child: SizedBox(
+          width: 420,
+          child: Card(
+            elevation: 5,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(22),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircleAvatar(
-                  radius: 42,
-                  backgroundColor: Colors.green.shade100,
-                  child: const Icon(
-                    Icons.sports_soccer,
-                    size: 48,
-                    color: primaryGreen,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                const Text(
-                  'ST Football Admin',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: darkGreen,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  'ລະບົບຈັດການການຈອງສະໜາມ',
-                  style: TextStyle(
-                    color: Colors.grey.shade700,
-                  ),
-                ),
-                const SizedBox(height: 30),
-                TextField(
-                  controller: emailController,
-                  keyboardType: TextInputType.emailAddress,
-                  decoration: InputDecoration(
-                    labelText: 'Email',
-                    prefixIcon: const Icon(Icons.email_outlined),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
+            child: Padding(
+              padding: const EdgeInsets.all(32),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircleAvatar(
+                    radius: 42,
+                    backgroundColor: Colors.green.shade100,
+                    child: Icon(
+                      Icons.sports_soccer,
+                      size: 56,
+                      color: Colors.green.shade800,
                     ),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: passwordController,
-                  obscureText: hidePassword,
-                  decoration: InputDecoration(
-                    labelText: 'Password',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        hidePassword
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                  const SizedBox(height: 20),
+                  const Text(
+                    'ເຂົ້າສູ່ລະບົບເດີ່ນບານ ST',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 30),
+                  TextField(
+                    controller: emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: const InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email),
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) => login(),
+                  ),
+                  const SizedBox(height: 18),
+                  TextField(
+                    controller: passwordController,
+                    obscureText: true,
+                    decoration: const InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock),
+                      border: OutlineInputBorder(),
+                    ),
+                    onSubmitted: (_) => login(),
+                  ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 52,
+                    child: ElevatedButton(
+                      onPressed: loading ? null : login,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF16A34A),
+                        foregroundColor: Colors.white,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          hidePassword = !hidePassword;
-                        });
-                      },
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(18),
+                      child: loading
+                          ? const SizedBox(
+                              width: 22,
+                              height: 22,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                color: Colors.white,
+                              ),
+                            )
+                          : const Text(
+                              'Login',
+                              style: TextStyle(fontSize: 17),
+                            ),
                     ),
                   ),
-                  onSubmitted: (_) => login(),
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: primaryGreen,
-                      foregroundColor: Colors.white,
-                      elevation: 0,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    onPressed: loading ? null : login,
-                    child: loading
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2.5,
-                              color: Colors.white,
-                            ),
-                          )
-                        : const Text(
-                            'ເຂົ້າສູ່ລະບົບ',
-                            style: TextStyle(
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

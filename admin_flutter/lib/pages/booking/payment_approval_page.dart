@@ -139,9 +139,7 @@ class _PaymentApprovalPageState extends State<PaymentApprovalPage> {
                   },
                 ),
               ),
-
             const SizedBox(width: 22),
-
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -153,9 +151,7 @@ class _PaymentApprovalPageState extends State<PaymentApprovalPage> {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-
                   const SizedBox(height: 10),
-
                   Text('Customer: ${booking['customer_name'] ?? '-'}'),
                   const SizedBox(height: 6),
                   Text('Phone: ${booking['customer_phone'] ?? '-'}'),
@@ -167,9 +163,7 @@ class _PaymentApprovalPageState extends State<PaymentApprovalPage> {
                   ),
                   const SizedBox(height: 6),
                   Text('Amount: ${booking['total_price'] ?? 0} Kip'),
-
                   const SizedBox(height: 14),
-
                   Container(
                     padding: const EdgeInsets.symmetric(
                       horizontal: 14,
@@ -187,9 +181,7 @@ class _PaymentApprovalPageState extends State<PaymentApprovalPage> {
                       ),
                     ),
                   ),
-
                   const SizedBox(height: 20),
-
                   Row(
                     children: [
                       ElevatedButton.icon(
