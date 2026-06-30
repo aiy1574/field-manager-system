@@ -617,25 +617,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
           'ເລືອກເມນູຍ່ອຍສຳລັບຈັດການພະນັກງານ, ລູກຄ້າ, ສະໜາມ ແລະ ສິນຄ້າ. ຂໍ້ມູນບາງສ່ວນໃຊ້ສຳລັບການຈອງ ແລະ POS.',
       items: [
         ModuleItem(
-          title: 'ພະນັກງານ',
+          title: 'ຂໍ້ມູນພະນັກງານ',
           subtitle: 'ຈັດການຜູ້ໃຊ້ Owner / Staff',
           icon: Icons.badge,
           page: 'employees',
         ),
         ModuleItem(
-          title: 'ລູກຄ້າ',
+          title: 'ຂໍ້ມູນລູກຄ້າ',
           subtitle: 'ຈັດການຂໍ້ມູນລູກຄ້າທີ່ລົງທະບຽນ',
           icon: Icons.people,
           page: 'customers',
         ),
         ModuleItem(
-          title: 'ສະໜາມ',
+          title: 'ຂໍ້ມູນເດີ່ນ',
           subtitle: 'ຂໍ້ມູນສະໜາມ ແລະ ລາຄາເດີ່ນ',
           icon: Icons.stadium,
           page: 'fields',
         ),
         ModuleItem(
-          title: 'ສິນຄ້າ',
+          title: 'ຂໍ້ມູນສິນຄ້າ',
           subtitle: 'ຈັດການສິນຄ້າ ແລະ stock',
           icon: Icons.shopping_cart,
           page: 'products',
@@ -644,43 +644,31 @@ class _AdminHomePageState extends State<AdminHomePage> {
     );
   }
 
-  Widget bookingMenuPage() {
+  Widget checkInMenuPage() {
     return modulePage(
-      title: 'ການຈອງ',
-      subtitle: 'ຈັດການຂັ້ນຕອນການຈອງທັງໝົດ',
-      icon: Icons.calendar_month,
-      introTitle: 'ໜ້າຈັດການການຈອງ',
+      title: 'ແຈ້ງເຂົ້າເດີ່ນ',
+      subtitle: 'ກວດສອບການຈອງ ແລະ ຢືນຢັນເຂົ້າໃຊ້ສະໜາມ',
+      icon: Icons.login,
+      introTitle: 'ໜ້າແຈ້ງເຂົ້າເດີ່ນ',
       introDescription:
-          'ໃຊ້ສຳລັບສ້າງການຈອງ, ກວດສອບລາຍການຈອງ, ອະນຸມັດການຊຳລະ ແລະ ກວດສອບ check-in.',
+          'ໃຊ້ສຳລັບກວດສອບການຈອງ, ກວດສອບການຊຳລະ ແລະ ຢືນຢັນການເຂົ້າໃຊ້ສະໜາມຂອງລູກຄ້າ.',
       items: [
         ModuleItem(
-          title: 'ຈອງເດີ່ນ',
-          subtitle: 'ສ້າງການຈອງໜ້າຮ້ານ',
-          icon: Icons.add_circle_outline,
-          page: 'create_booking',
-        ),
-        ModuleItem(
-          title: 'ຈັດການການຈອງ',
-          subtitle: 'ກວດສອບລາຍການຈອງທັງໝົດ',
-          icon: Icons.event_note,
+          title: 'ກວດສອບການຈອງ',
+          subtitle: 'ກວດສອບລາຍການຈອງກ່ອນແຈ້ງເຂົ້າ',
+          icon: Icons.fact_check,
           page: 'bookings',
         ),
         ModuleItem(
-          title: 'ອະນຸມັດການຊຳລະ',
-          subtitle: 'ກວດສະລິບ ແລະ ສະຖານະການຈ່າຍ',
+          title: 'ກວດສອບການຊຳລະ',
+          subtitle: 'ກວດສອບສະລິບ ແລະ ສະຖານະຊຳລະ',
           icon: Icons.verified,
           page: 'payment_approval',
         ),
         ModuleItem(
-          title: 'Check-in',
-          subtitle: 'ກວດສອບການເຂົ້າໃຊ້ສະໜາມ',
+          title: 'ຢືນຢັນແຈ້ງເຂົ້າເດີ່ນ',
+          subtitle: 'ຢືນຢັນການເຂົ້າໃຊ້ສະໜາມ',
           icon: Icons.login,
-          page: 'bookings',
-        ),
-        ModuleItem(
-          title: 'ຍົກເລີກການຈອງ',
-          subtitle: 'ກວດສອບຄຳຂໍຍົກເລີກການຈອງ',
-          icon: Icons.cancel_schedule_send,
           page: 'bookings',
         ),
       ],
@@ -689,7 +677,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   Widget posMenuPage() {
     return modulePage(
-      title: 'POS',
+      title: 'ຂາຍສິນຄ້າ',
       subtitle: 'ຂາຍສິນຄ້າ ແລະ ຕິດຕາມປະຫວັດການຂາຍ',
       icon: Icons.point_of_sale,
       introTitle: 'ໜ້າຂາຍສິນຄ້າ',
@@ -698,7 +686,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
       items: [
         ModuleItem(
           title: 'ຂາຍສິນຄ້າ',
-          subtitle: 'ໜ້າຂາຍສິນຄ້າ POS',
+          subtitle: 'ເລືອກສິນຄ້າ ຄິດໄລ່ລາຄາ ແລະ ອອກບິນ',
           icon: Icons.point_of_sale,
           page: 'sell_products',
         ),
@@ -713,40 +701,55 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
 
   Widget reportsMenuPage() {
-    if (!isOwner) return noPermissionPage();
+    final List<ModuleItem> staffReports = [
+      ModuleItem(
+        title: 'ລາຍງານການແຈ້ງເຂົ້າເດີ່ນ',
+        subtitle: 'ຂໍ້ມູນການ check-in ແລະ ການເຂົ້າໃຊ້ສະໜາມ',
+        icon: Icons.login,
+        page: 'report_checkin',
+      ),
+      ModuleItem(
+        title: 'ລາຍງານການຈອງ',
+        subtitle: 'ຂໍ້ມູນການຈອງສະໜາມ',
+        icon: Icons.event_note,
+        page: 'report_booking',
+      ),
+      ModuleItem(
+        title: 'ລາຍງານການຂາຍສິນຄ້າ',
+        subtitle: 'ຂໍ້ມູນການຂາຍສິນຄ້າ POS',
+        icon: Icons.receipt_long,
+        page: 'report_sales',
+      ),
+    ];
+
+    final List<ModuleItem> ownerOnlyReports = [
+      ModuleItem(
+        title: 'ລາຍງານລູກຄ້າ',
+        subtitle: 'ຂໍ້ມູນລູກຄ້າ ແລະ ປະຫວັດການໃຊ້ງານ',
+        icon: Icons.people,
+        page: 'report_customers',
+      ),
+      ModuleItem(
+        title: 'ລາຍງານລາຍຮັບ',
+        subtitle: 'ສະຫຼຸບລາຍຮັບຈາກການຈອງ ແລະ POS',
+        icon: Icons.payments,
+        page: 'report_revenue',
+      ),
+    ];
 
     return modulePage(
       title: 'ລາຍງານ',
-      subtitle: 'ສະຫຼຸບຂໍ້ມູນ ແລະ ລາຍຮັບຂອງລະບົບ',
+      subtitle: isOwner
+          ? 'ສະຫຼຸບລາຍງານທັງໝົດຂອງລະບົບ'
+          : 'ສະຫຼຸບລາຍງານທີ່ພະນັກງານສາມາດເບິ່ງໄດ້',
       icon: Icons.bar_chart,
       introTitle: 'ໜ້າລາຍງານ',
-      introDescription:
-          'ໃຊ້ສຳລັບເບິ່ງລາຍງານການຈອງ, ການຂາຍ, ລາຍຮັບ ແລະ ຂໍ້ມູນລູກຄ້າ.',
+      introDescription: isOwner
+          ? 'Owner/Admin ສາມາດເບິ່ງລາຍງານທັງໝົດ ລວມທັງລາຍງານລູກຄ້າ ແລະ ລາຍຮັບ.'
+          : 'Staff ສາມາດເບິ່ງລາຍງານທີ່ໃຊ້ໃນວຽກປະຈຳວັນ ເຊັ່ນ ການຈອງ, ແຈ້ງເຂົ້າເດີ່ນ ແລະ ການຂາຍສິນຄ້າ.',
       items: [
-        ModuleItem(
-          title: 'ລາຍງານລວມ',
-          subtitle: 'ພາບລວມຂອງລາຍງານລະບົບ',
-          icon: Icons.analytics,
-          page: 'reports',
-        ),
-        ModuleItem(
-          title: 'ລາຍງານການຈອງ',
-          subtitle: 'ຂໍ້ມູນການຈອງ ແລະ check-in',
-          icon: Icons.event_note,
-          page: 'reports',
-        ),
-        ModuleItem(
-          title: 'ລາຍງານການຂາຍ',
-          subtitle: 'ຂໍ້ມູນການຂາຍສິນຄ້າ',
-          icon: Icons.receipt_long,
-          page: 'reports',
-        ),
-        ModuleItem(
-          title: 'ລາຍງານລາຍຮັບ',
-          subtitle: 'ສະຫຼຸບລາຍຮັບຈາກການຈອງ ແລະ POS',
-          icon: Icons.payments,
-          page: 'reports',
-        ),
+        ...staffReports,
+        if (isOwner) ...ownerOnlyReports,
       ],
     );
   }
@@ -862,12 +865,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
   Widget currentPage() {
     if (!isOwner) {
       if (selectedPage == 'manage' ||
-          selectedPage == 'reports_menu' ||
           selectedPage == 'fields' ||
           selectedPage == 'customers' ||
           selectedPage == 'products' ||
-          selectedPage == 'reports' ||
-          selectedPage == 'employees') {
+          selectedPage == 'employees' ||
+          selectedPage == 'report_customers' ||
+          selectedPage == 'report_revenue') {
         return noPermissionPage();
       }
     }
@@ -879,8 +882,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
       case 'manage':
         return manageMenuPage();
 
-      case 'booking_menu':
-        return bookingMenuPage();
+      case 'create_booking':
+        return CreateBookingPage(token: widget.token);
+
+      case 'checkin_menu':
+        return checkInMenuPage();
 
       case 'pos_menu':
         return posMenuPage();
@@ -900,9 +906,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
       case 'bookings':
         return BookingsPage(token: widget.token);
 
-      case 'create_booking':
-        return CreateBookingPage(token: widget.token);
-
       case 'payment_approval':
         return PaymentApprovalPage(token: widget.token);
 
@@ -912,7 +915,11 @@ class _AdminHomePageState extends State<AdminHomePage> {
       case 'sales_history':
         return SalesHistoryPage(token: widget.token);
 
-      case 'reports':
+      case 'report_checkin':
+      case 'report_booking':
+      case 'report_sales':
+      case 'report_customers':
+      case 'report_revenue':
         return ReportsPage(token: widget.token);
 
       case 'employees':
@@ -1003,17 +1010,25 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       ],
                     ),
                   sidebarItem(
-                    title: 'ການຈອງ',
-                    icon: Icons.calendar_month,
-                    page: 'booking_menu',
+                    title: 'ຈອງເດີ່ນ',
+                    icon: Icons.add_circle_outline,
+                    page: 'create_booking',
                     activePages: const [
                       'create_booking',
+                    ],
+                  ),
+                  sidebarItem(
+                    title: 'ແຈ້ງເຂົ້າເດີ່ນ',
+                    icon: Icons.login,
+                    page: 'checkin_menu',
+                    activePages: const [
+                      'checkin_menu',
                       'bookings',
                       'payment_approval',
                     ],
                   ),
                   sidebarItem(
-                    title: 'POS',
+                    title: 'ຂາຍສິນຄ້າ',
                     icon: Icons.point_of_sale,
                     page: 'pos_menu',
                     activePages: const [
@@ -1021,15 +1036,19 @@ class _AdminHomePageState extends State<AdminHomePage> {
                       'sales_history',
                     ],
                   ),
-                  if (isOwner)
-                    sidebarItem(
-                      title: 'ລາຍງານ',
-                      icon: Icons.bar_chart,
-                      page: 'reports_menu',
-                      activePages: const [
-                        'reports',
-                      ],
-                    ),
+                  sidebarItem(
+                    title: 'ລາຍງານ',
+                    icon: Icons.bar_chart,
+                    page: 'reports_menu',
+                    activePages: const [
+                      'reports_menu',
+                      'report_checkin',
+                      'report_booking',
+                      'report_sales',
+                      'report_customers',
+                      'report_revenue',
+                    ],
+                  ),
                 ],
               ),
             ),
