@@ -12,6 +12,7 @@ import productRoutes from './routes/product.routes.js';
 import customerRoutes from './routes/customer.routes.js';
 import fieldRoutes from './routes/field.routes.js';
 import fieldServiceRoutes from './routes/field_service.routes.js';
+import employeeRoutes from './routes/employee.routes.js';
 import crudRoutes from './routes/crud.routes.js';
 
 const app = express();
@@ -34,6 +35,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/fields', fieldRoutes);
 app.use('/api/field-services', fieldServiceRoutes);
+app.use('/api/employees', employeeRoutes);
 
 app.use('/api', crudRoutes);
 

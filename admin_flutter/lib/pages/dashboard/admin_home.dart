@@ -7,7 +7,10 @@ import '../booking/bookings_page.dart';
 import '../booking/create_booking_page.dart';
 import '../booking/payment_approval_page.dart';
 
+import '../booking/checkin_page.dart';
+
 import '../manage/customers_page.dart';
+import '../manage/employees_page.dart';
 import '../manage/fields_page.dart';
 import '../manage/products_page.dart';
 
@@ -657,7 +660,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           title: 'ກວດສອບການຈອງ',
           subtitle: 'ກວດສອບລາຍການຈອງກ່ອນແຈ້ງເຂົ້າ',
           icon: Icons.fact_check,
-          page: 'bookings',
+          page: 'checkin',
         ),
         ModuleItem(
           title: 'ກວດສອບການຊຳລະ',
@@ -669,7 +672,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
           title: 'ຢືນຢັນແຈ້ງເຂົ້າເດີ່ນ',
           subtitle: 'ຢືນຢັນການເຂົ້າໃຊ້ສະໜາມ',
           icon: Icons.login,
-          page: 'bookings',
+          page: 'checkin',
         ),
       ],
     );
@@ -787,6 +790,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
               const SizedBox(height: 18),
               Text(
                 title,
+                textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -888,6 +892,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
       case 'checkin_menu':
         return checkInMenuPage();
 
+      case 'checkin':
+        return CheckinPage(token: widget.token);
+
       case 'pos_menu':
         return posMenuPage();
 
@@ -923,7 +930,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
         return ReportsPage(token: widget.token);
 
       case 'employees':
-        return comingSoonPage('ຈັດການພະນັກງານ');
+        return EmployeesPage(token: widget.token);
 
       default:
         return dashboardPage();
@@ -1023,7 +1030,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
                     page: 'checkin_menu',
                     activePages: const [
                       'checkin_menu',
-                      'bookings',
+                      'checkin',
                       'payment_approval',
                     ],
                   ),
